@@ -98,6 +98,23 @@ def clean_deployment(ask_first=True):
         click.echo('Plugin was not deleted')
     return False
 
+@cli.command()
+def clean_docs():
+    """
+    Remove the built HTML help files from the build directory
+    """
+    if os.path.exists('help'):
+        click.echo('Removing built HTML from the help documentation')
+        if sys.platform == 'win32':
+            makeprg = 'make.bat'
+        else:
+            makeprg = 'make'
+        cwd = os.getcwd()
+        os.chdir('help')
+        subprocess.check_call([makeprg, 'clean'])
+        os.chdir(cwd)
+    else:
+        print "No help directory exists in the current directory"
 
 @cli.command()
 def dclean():
