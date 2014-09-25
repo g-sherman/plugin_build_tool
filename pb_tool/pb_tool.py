@@ -42,6 +42,7 @@ def deploy():
         print """Deploying will:
         * Remove your currently deployed version
         * Compile the ui and resource files
+        * Build the help docs
         * Copy everything to the .qgis/python/plugins directory
         """
 
@@ -52,8 +53,7 @@ def deploy():
         # compile to make sure everything is fresh
         print 'Compiling to make sure install is clean'
         compile_files()
-        #click.echo('Deploying it')
-        # get the cfg
+        build_docs()
         install_files = get_install_files()
         # make the plugin directory if it doesn't exist
         if not os.path.exists(plugin_dir):
@@ -71,7 +71,7 @@ def deploy():
             print "Copying {} to {}".format(help_src, help_target)
             shutil.copytree(help_src, help_target)
         except OSError as oops:
-            print "Error copying files: {}".format(oops.strerror)
+            print "Error copying files: {}, {}".format(file, oops.strerror)
             print "To ensure proper deployment, delete the deployed plugin before continuing."
 
 
@@ -122,8 +122,12 @@ def compile():
     """
     compile_files()
 
+
 @cli.command()
 def doc():
+    build_docs()
+
+def build_docs():
     """ Build the docs using sphinx"""
     if os.path.exists('help'):
         click.echo('Building the help documentation')
@@ -131,8 +135,10 @@ def doc():
             makeprg = 'make.bat'
         else:
             makeprg = 'make'
+        cwd = os.getcwd()
         os.chdir('help')
         subprocess.check_call([makeprg, 'html'])
+        os.chdir(cwd)
     else:
         print "No help directory exists in the current directory"
 
