@@ -12,12 +12,10 @@ import click
 
 @click.group()
 def cli():
+    """Simple Python tool to compile and deploy a QGIS plugin.
+    For help on a command use --help after the command:
+    pb_tool deploy --help"""
     pass
-
-@cli.command()
-def echo():
-    """Example script."""
-    click.echo('Hello World!')
 
 
 def get_install_files():
@@ -31,6 +29,10 @@ def get_install_files():
     #click.echo(install_files)
     return install_files
 
+@cli.command()
+def version():
+    """Return the version of pb_tool and exit"""
+    click.echo("1.0 2014-09-25")
 
 @cli.command()
 def deploy():
@@ -99,6 +101,8 @@ def clean_deployment(ask_first=True):
 
 @cli.command()
 def dclean():
+    """ Remove the deployed plugin from the .qgis2/python/plugins directory
+    """
     clean_deployment()
 
 @cli.command()
@@ -125,6 +129,7 @@ def compile():
 
 @cli.command()
 def doc():
+    """ Build HTML version of the help files using sphinx"""
     build_docs()
 
 def build_docs():
@@ -146,7 +151,7 @@ def build_docs():
 def zip():
     """ Package the plugin into a zip file
     suitable for uploading to the QGIS
-    Pluging repository"""
+    plugin repository"""
 
     name = config().get('plugin', 'name', None)
     confirm = click.confirm(
