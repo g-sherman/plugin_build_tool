@@ -13,6 +13,7 @@ a QGIS Python Plugin:
 * Create a zip file for upload to a repository
 * Clean both compiled and deployed files
 * Build and clean documentation
+* Works on Windows, OS X, and Linux
 
 ##Installation
 You can install the tool using pip:
@@ -29,7 +30,11 @@ You can also install using easy_install:
 
 ##Usage
 
-To display the available command, just enter `pb_tool` on the command line:
+*pb_tool* requires a configuration file in order to do anything. By default,
+*pb_tool* assumes a file name of pb_tool.cfg, although you can specify a
+different one using the ``--config`` options in most commands.
+
+To display the available commands, just enter `pb_tool` on the command line:
 
     $ pb_tool
     Usage: pb_tool [OPTIONS] COMMAND [ARGS]...
