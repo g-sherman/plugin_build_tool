@@ -315,7 +315,7 @@ def create(name):
 
     # get the list of python files
     py_files = glob.glob('*.py')
-    print py_files
+    
     # guess the main dialog ui file
     main_dlg = glob.glob('*_dialog_base.ui')
 
@@ -323,7 +323,8 @@ def create(name):
     other_ui = glob.glob('*.ui')
     # remove the main dialog file
     try:
-        other_ui.remove(main_dlg)
+        for ui in main_dlg:
+            other_ui.remove(ui)
     except:
         # don't care if we didn't find it
         pass

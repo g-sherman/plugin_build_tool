@@ -171,7 +171,7 @@ and should be self-explanatory.
     main_dialog: git_test2_dialog_base.ui
 
     # Other ui files for your dialogs (these will be compiled)
-    compiled_ui_files: git_test2_dialog_base.ui
+    compiled_ui_files:
 
     # Resource file(s) that will be compiled
     resource_files: resources.qrc
@@ -182,7 +182,6 @@ and should be self-explanatory.
     # Other directories to be deployed with the plugin.
     # These must be subdirectories under the plugin directory
     extra_dirs:
-
 
     [help]
     # the built help directory that should be deployed with the plugin
