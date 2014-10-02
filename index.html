@@ -107,6 +107,175 @@ Commands:
   version     Return the version of pb_tool and exit
   zip         Package the plugin into a zip file suitable...
 </code></pre>
+
+<h2>
+<a name="command-help" class="anchor" href="#command-help"><span class="octicon octicon-link"></span></a>Command Help</h2>
+
+<p>Here is the help for a few of the commands, as reported using the --help option:</p>
+
+<h3>
+<a name="compile" class="anchor" href="#compile"><span class="octicon octicon-link"></span></a>Compile</h3>
+
+<pre><code>$ pb_tool compile --help
+Usage: pb_tool compile [OPTIONS]
+
+  Compile the resource and ui files
+
+Options:
+  --config TEXT  Name of the config file to use if other than pb_tool.cfg
+  --help         Show this message and exit.
+</code></pre>
+
+<h3>
+<a name="clean-deployment" class="anchor" href="#clean-deployment"><span class="octicon octicon-link"></span></a>Clean Deployment</h3>
+
+<pre><code>$ pb_tool dclean --help
+Usage: pb_tool dclean [OPTIONS]
+
+  Remove the deployed plugin from the .qgis2/python/plugins directory
+
+Options:
+  --config TEXT  Name of the config file to use if other than pb_tool.cfg
+  --help         Show this message and exit.
+</code></pre>
+
+<p><strong>Note</strong>: Confirmation is required to remove the plugin</p>
+
+<h3>
+<a name="clean-compiled-files" class="anchor" href="#clean-compiled-files"><span class="octicon octicon-link"></span></a>Clean Compiled Files</h3>
+
+<pre><code>$ pb_tool clean --help
+Usage: pb_tool clean [OPTIONS]
+
+  Remove compiled resource and ui files
+
+Options:
+  --config TEXT  Name of the config file to use if other than pb_tool.cfg
+  --help         Show this message and exit.
+</code></pre>
+
+<h3>
+<a name="deploy" class="anchor" href="#deploy"><span class="octicon octicon-link"></span></a>Deploy</h3>
+
+<pre><code>$ pb_tool deploy --help
+Usage: pb_tool deploy [OPTIONS]
+
+  Deploy the plugin using parameters in pb_tool.cfg
+
+Options:
+  --config TEXT  Name of the config file to use if other than pb_tool.cfg
+  --help         Show this message and exit.
+</code></pre>
+
+<p><strong>Note</strong>: Confirmation is required before deploying as it removes the current version.</p>
+
+<h3>
+<a name="zip" class="anchor" href="#zip"><span class="octicon octicon-link"></span></a>Zip</h3>
+
+<pre><code>$ pb_tool zip --help
+Usage: pb_tool zip [OPTIONS]
+
+  Package the plugin into a zip file suitable for uploading to the QGIS
+  plugin repository
+
+Options:
+  --config TEXT  Name of the config file to use if other than pb_tool.cfg
+  --help         Show this message and exit.
+</code></pre>
+
+<p><strong>Note</strong>: To get a clean package for upload to a repository, the zip command
+suggests doing a <code>dclean</code> and <code>deploy</code> first.</p>
+
+<h3>
+<a name="creating-a-config-file-for-an-existing-project" class="anchor" href="#creating-a-config-file-for-an-existing-project"><span class="octicon octicon-link"></span></a>Creating a Config File for an Existing Project</h3>
+
+<p>You can create a config file for an existing plugin project by changing to the
+directory containing the plugin source and using <code>pb_tool create</code>:</p>
+
+<pre><code>$ pb_tool create --help
+Usage: pb_tool create [OPTIONS]
+
+  Create a config file based on source files in the current directory
+
+Options:
+  --name TEXT  Name of the config file to create if other than pb_tool.cfg
+  --help       Show this message and exit.
+</code></pre>
+
+<p>Once the config file is created you can try <code>deploy</code> to see if it
+picked up everything needed for your plugin---or open it in your
+favorite text editor to tweak it as needed. The config file is annotated
+and should be self-explanatory.</p>
+
+<h2>
+<a name="deploying" class="anchor" href="#deploying"><span class="octicon octicon-link"></span></a>Deploying</h2>
+
+<p>Use <code>pb_tool deploy</code> to build your plugin and copy it
+to qgis2/python/plugins`` in your HOME directory:</p>
+
+<pre><code>$ pb_tool deploy
+Deploying will:
+        * Remove your currently deployed version
+        * Compile the ui and resource files
+        * Build the help docs
+        * Copy everything to your .qgis2/python/plugins directory
+
+Proceed? [y/N]: y
+Removing plugin from /Users/gsherman/.qgis2/python/plugins/test_plugin
+Plugin was not deleted: No such file or directory
+Deploying to /Users/gsherman/.qgis2/python/plugins/test_plugin
+Compiling to make sure install is clean
+Compiling foo.ui to foo.py
+Compiled 1 UI files
+Compiling resources.qrc to resources_rc.py
+Compiled 1 resource files
+Building the help documentation
+sphinx-build -b html -d build/doctrees   source build/html
+Running Sphinx v1.2b1
+loading pickled environment... done
+building [html]: targets for 0 source files that are out of date
+updating environment: 0 added, 0 changed, 0 removed
+looking for now-outdated files... none found
+no targets are out of date.
+
+Build finished. The HTML pages are in build/html.
+Copying icontest.py
+Copying icontest_dialog.py
+Copying __init__.py
+Copying icontest_dialog_base.ui
+Copying foo.py
+Copying resources_rc.py
+Copying icon.png
+Copying metadata.txt
+Copying contents of foo to /Users/gsherman/.qgis2/python/plugins/test_plugin
+Copying help/build/html to /Users/gsherman/.qgis2/python/plugins/test_plugin/help
+</code></pre>
+
+<h2>
+<a name="whats-missing" class="anchor" href="#whats-missing"><span class="octicon octicon-link"></span></a>What's Missing</h2>
+
+<p><code>pb_tool</code> currently doesn't deal with translations or tests for your plugin.</p>
+
+<h2>
+<a name="why" class="anchor" href="#why"><span class="octicon octicon-link"></span></a>Why?</h2>
+
+<p>Why create a build tool when <code>make</code> using the Makefile generated by the
+Plugin Builder plugin generally works? Here are some reasons:</p>
+
+<ul>
+<li>The Makefile doesn't work completely on Windows in all cases</li>
+<li>
+<code>pb_tool</code> lets you create configs for plugins that were not created using the
+Plugin Builder plugin</li>
+<li>Writing a command line tool is fun..</li>
+</ul><h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>Issues and pull requests can be submitted here:</p>
+
+<ul>
+<li><a href="https://github.com/g-sherman/plugin_build_tool">https://github.com/g-sherman/plugin_build_tool</a></li>
+</ul>
       </section>
     </div>
 
