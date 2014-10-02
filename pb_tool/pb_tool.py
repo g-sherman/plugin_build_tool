@@ -22,10 +22,9 @@ def cli():
     declares the files and resources used in your plugin. Plugin Builder
     2.6.0 creates a config file when you generate a new plugin template.
 
-    See
-    https://github.com/g-sherman/plugin_build_tool/blob/master/test_plugin/pb_tool.cfg
-    for an example config file. You can also use the create command to generate
-    a best-guess config file for an existing project, then tweak as needed."""
+    See http://g-sherman.github.io/plugin_build_tool for for an example config
+    file. You can also use the create command to generate a best-guess config
+    file for an existing project, then tweak as needed."""
     pass
 
 
@@ -225,12 +224,12 @@ def zip(config):
     suitable for uploading to the QGIS
     plugin repository"""
 
+    name = get_config(config).get('plugin', 'name', None)
     confirm = click.confirm('Do a dclean and deploy first?')
     if confirm:
         clean_deployment(False, config)
         deploy_files(config)
 
-    name = get_config(config).get('plugin', 'name', None)
     confirm = click.confirm(
         'Create a packaged plugin ({}.zip) from the deployed files?'.format(name))
     if confirm:
