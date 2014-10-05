@@ -18,7 +18,7 @@
  ***************************************************************************/
 """
 def check_path(app):
-    """ Adapted form StackExchange:
+    """ Adapted from StackExchange:
         http://stackoverflow.com/questions/377017
     """
     import os
