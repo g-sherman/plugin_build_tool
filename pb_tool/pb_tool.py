@@ -31,6 +31,7 @@ from string import Template
 
 import click
 
+from util import check_path
 
 @click.group()
 def cli():
@@ -61,7 +62,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("1.0, 2014-10-01")
+    click.echo("1.1, 2014-10-04")
 
 
 @cli.command()
@@ -435,31 +436,43 @@ def compile_files(cfg):
     # TODO add changed detection
     #cfg = get_config(config)
 
-    ui_files = cfg.get('files', 'compiled_ui_files').split()
-    ui_count = 0
-    for ui in ui_files:
-        if os.path.exists(ui):
-            (base, ext) = os.path.splitext(ui)
-            output = "{}.py".format(base)
-            print "Compiling {} to {}".format(ui, output)
-            subprocess.check_call(['pyuic4', '-o', output, ui])
-            ui_count += 1
-        else:
-            print "{} does not exist---skipped".format(ui)
-    print "Compiled {} UI files".format(ui_count)
+    # check to see if we have pyuic4
+    pyuic4 = check_path('pyuic4')
 
-    res_files = cfg.get('files', 'resource_files').split()
-    res_count = 0
-    for res in res_files:
-        if os.path.exists(res):
-            (base, ext) = os.path.splitext(res)
-            output = "{}_rc.py".format(base)
-            print "Compiling {} to {}".format(res, output)
-            subprocess.check_call(['pyrcc4', '-o', output, res])
-            res_count += 1
-        else:
-            print "{} does not exist---skipped".format(res)
-    print "Compiled {} resource files".format(res_count)
+    if not pyuic4:
+        print "pyuic4 is not in your path---unable to compile your ui files"
+    else:
+        ui_files = cfg.get('files', 'compiled_ui_files').split()
+        ui_count = 0
+        for ui in ui_files:
+            if os.path.exists(ui):
+                (base, ext) = os.path.splitext(ui)
+                output = "{}.py".format(base)
+                print "Compiling {} to {}".format(ui, output)
+                subprocess.check_call(['pyuic4', '-o', output, ui])
+                ui_count += 1
+            else:
+                print "{} does not exist---skipped".format(ui)
+        print "Compiled {} UI files".format(ui_count)
+
+    # check to see if we have pyrcc4
+    pyrcc4 = check_path('pyrcc4')
+
+    if not pyrcc4:
+        print "pyrcc4 is not in your path---unable to compile your resource file(s)"
+    else:
+        res_files = cfg.get('files', 'resource_files').split()
+        res_count = 0
+        for res in res_files:
+            if os.path.exists(res):
+                (base, ext) = os.path.splitext(res)
+                output = "{}_rc.py".format(base)
+                print "Compiling {} to {}".format(res, output)
+                subprocess.check_call(['pyrcc4', '-o', output, res])
+                res_count += 1
+            else:
+                print "{} does not exist---skipped".format(res)
+        print "Compiled {} resource files".format(res_count)
 
 
 def copy(source, destination):
