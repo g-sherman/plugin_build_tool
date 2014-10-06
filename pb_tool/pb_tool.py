@@ -236,6 +236,30 @@ def build_docs():
     else:
         print "No help directory exists in the current directory"
 
+@cli.command()
+@click.option('--config', default='pb_tool.cfg',
+              help='Name of the config file to use if other than pb_tool.cfg')
+def translate(config):
+    """ Build translations using lrelease. Locales must be specified
+    in the config file and the corresponding .ts file must exist in
+    the i18n directory of your plugin."""
+    # see if we can find the lrelease app
+    cmd = check_path('lrelease')
+    if not cmd:
+        cmd = check_path('lrelease-qt')
+    if not cmd:
+        print """Unable to find the lrelease command. Make sure it is installed
+                 and in your path."""
+    else:
+        locales = get_config(config).get('files', 'locales').split()
+        for locale in locales:
+            (name, ext) = os.path.splitext(locale)
+            if ext != '.ts':
+                print 'no ts extension'
+                locale = name + '.ts'
+            print cmd, locale
+            subprocess.check_call([cmd, os.path.join('i18n', locale)])
+                
 
 @cli.command()
 @click.option('--config', default='pb_tool.cfg',
@@ -544,6 +568,9 @@ extras: $Extras
 # These must be subdirectories under the plugin directory
 extra_dirs:
 
+# ISO code(s) for any locales (translations), separated by spaces.
+# Corresponding .ts files must exist in the i18n directory
+locales:
 
 [help]
 # the built help directory that should be deployed with the plugin
