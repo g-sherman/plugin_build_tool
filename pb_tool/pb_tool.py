@@ -125,30 +125,34 @@ def install_files(plugin_dir, cfg):
             except Exception as oops:
                 errors.append("Error copying files: {}, {}".format(
                     file, oops.strerror))
-                print "----> ERROR"
+                click.echo(click.style(' ----> ERROR', fg='red'))
                 fail = True
             extra_dirs = cfg.get('files', 'extra_dirs').split()
             #print "EXTRA DIRS: {}".format(extra_dirs)
         for xdir in extra_dirs:
-            print "Copying contents of {} to {}".format(xdir, plugin_dir)
+            print "Copying contents of {} to {}".format(xdir, plugin_dir),
             try:
                 copy_tree(xdir, "{}/{}".format(plugin_dir, xdir))
+                print ""
             except Exception as oops:
                 errors.append("Error copying directory: {}, {}".format(
                     xdir, oops.message))
+                click.echo(click.style(' ----> ERROR', fg='red'))
                 fail = True
         help_src = cfg.get('help', 'dir')
         help_target = os.path.join(
             get_plugin_directory(),
             cfg.get('plugin', 'name'),
             cfg.get('help', 'target'))
-        print "Copying {} to {}".format(help_src, help_target)
+        print "Copying {} to {}".format(help_src, help_target),
         #shutil.copytree(help_src, help_target)
         try:
             copy_tree(help_src, help_target)
+            print ""
         except Exception as oops:
             errors.append("Error copying help files: {}, {}".format(
                 help_src, oops.message))
+            click.echo(click.style(' ----> ERROR', fg='red'))
             fail = True
         if fail:
             print "\nERRORS:"
