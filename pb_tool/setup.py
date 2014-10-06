@@ -36,7 +36,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Topic :: Scientific/Engineering :: GIS'],
     keywords='QGIS PyQGIS',
-    py_modules=['pb_tool', 'util'],
+    py_modules=['pb_tool'],
     install_requires=[
         'Click',
         'nose'
