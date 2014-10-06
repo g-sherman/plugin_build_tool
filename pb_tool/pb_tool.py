@@ -27,11 +27,10 @@ import errno
 import glob
 import ConfigParser
 from string import Template
+from distutils.dir_util import copy_tree
 
 
 import click
-
-from util import check_path
 
 @click.group()
 def cli():
@@ -68,74 +67,87 @@ def version():
 @cli.command()
 @click.option('--config', default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
-def deploy(config):
-    """Deploy the plugin using parameters in pb_tool.cfg"""
-    deploy_files(config)
+@click.option('--quick', '-q', is_flag=True,
+              help='Do a quick install without compiling ui, resource, docs, \
+              and translation files')
+def deploy(config, quick):
+    """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
+    deploy_files(config, quick)
 
 
-def deploy_files(config):
+def deploy_files(config, quick):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
     if not os.path.exists(config):
         click.echo("Configuration file {} is missing.".format(config))
     else:
-        print """Deploying will:
-        * Remove your currently deployed version
-        * Compile the ui and resource files
-        * Build the help docs
-        * Copy everything to your .qgis2/python/plugins directory
-        """
+        cfg = get_config(config)
+        plugin_dir = os.path.join(get_plugin_directory(), cfg.get('plugin', 'name'))
+        if quick:
+            print "Doing quick install"
+            install_files(plugin_dir, cfg)
+            
+        else:
+            print """Deploying will:
+            * Remove your currently deployed version
+            * Compile the ui and resource files
+            * Build the help docs
+            * Copy everything to your .qgis2/python/plugins directory
+            """
 
-        if click.confirm("Proceed?"):
+            if click.confirm("Proceed?"):
 
-            cfg = get_config(config)
-            plugin_dir = os.path.join(get_plugin_directory(), cfg.get('plugin', 'name'))
-            # clean the deployment
-            clean_deployment(False, config)
-            print "Deploying to {}".format(plugin_dir)
-            # compile to make sure everything is fresh
-            print 'Compiling to make sure install is clean'
-            compile_files(cfg)
-            build_docs()
-            install_files = get_install_files(cfg)
-            # make the plugin directory if it doesn't exist
-            if not os.path.exists(plugin_dir):
-                os.mkdir(plugin_dir)
+                # clean the deployment
+                clean_deployment(False, config)
+                print "Deploying to {}".format(plugin_dir)
+                # compile to make sure everything is fresh
+                print 'Compiling to make sure install is clean'
+                compile_files(cfg)
+                build_docs()
+                install_files(plugin_dir, cfg)
 
-            fail = False
-            try:
-                for file in install_files:
-                    print "Copying {}".format(file)
-                    shutil.copy(file, os.path.join(plugin_dir, file))
-                # copy extra dirs
-            except OSError as oops:
-                print "Error copying files: {}, {}".format(file, oops.strerror)
-                fail = True
-            try:
-                extra_dirs = cfg.get('files', 'extra_dirs').split()
-                #print "EXTRA DIRS: {}".format(extra_dirs)
-                for xdir in extra_dirs:
-                    print "Copying contents of {} to {}".format(xdir, plugin_dir)
-                    shutil.copytree(xdir, "{}/{}".format(
-                        plugin_dir, xdir))
-            except OSError as oops:
-                print "Error copying directory: {}, {}".format(xdir, oops.strerror)
-                fail = True
-            try:
-                help_src = cfg.get('help', 'dir')
-                help_target = os.path.join(
-                    get_plugin_directory(),
-                    cfg.get('plugin', 'name'),
-                    cfg.get('help', 'target'))
-                print "Copying {} to {}".format(help_src, help_target)
-                shutil.copytree(help_src, help_target)
-            except OSError as oops:
-                print "Error copying help files: {}, {}".format(help_src, oops.strerror)
-                fail = True
-            if fail:
-                print "\nOne or more files/directories failed to deploy."
-                print "To ensure proper deployment, try using dclean to delete"
-                print "the plugin before deploying."
+def install_files(plugin_dir, cfg):
+        install_files = get_install_files(cfg)
+        # make the plugin directory if it doesn't exist
+        if not os.path.exists(plugin_dir):
+            os.mkdir(plugin_dir)
+
+        fail = False
+        try:
+            for file in install_files:
+                print "Copying {}".format(file)
+                shutil.copy(file, os.path.join(plugin_dir, file))
+            # copy extra dirs
+        except OSError as oops:
+            print "Error copying files: {}, {}".format(file, oops.strerror)
+            fail = True
+        try:
+            extra_dirs = cfg.get('files', 'extra_dirs').split()
+            #print "EXTRA DIRS: {}".format(extra_dirs)
+            for xdir in extra_dirs:
+                print "Copying contents of {} to {}".format(xdir, plugin_dir)
+                #shutil.copytree(xdir, "{}/{}".format(
+                #    plugin_dir, xdir))
+                copy_tree(xdir, "{}/{}".format(plugin_dir, xdir))
+        except OSError as oops:
+            print "Error copying directory: {}, {}".format(xdir, oops.strerror)
+            fail = True
+        try:
+            help_src = cfg.get('help', 'dir')
+            help_target = os.path.join(
+                get_plugin_directory(),
+                cfg.get('plugin', 'name'),
+                cfg.get('help', 'target'))
+            print "Copying {} to {}".format(help_src, help_target)
+            #shutil.copytree(help_src, help_target)
+            copy_tree(help_src, help_target)
+        except OSError as oops:
+            print "Error copying help files: {}, {}".format(help_src, oops.strerror)
+            fail = True
+        if fail:
+            print "\nOne or more files/directories failed to deploy."
+            print "To ensure proper deployment, try using dclean to delete"
+            print "the plugin before deploying."
 
 
 def clean_deployment(ask_first=True, config='pb_tool.cfg'):
@@ -250,15 +262,24 @@ def translate(config):
     if not cmd:
         print """Unable to find the lrelease command. Make sure it is installed
                  and in your path."""
+        if sys.platform == 'win32':
+            print ('You can get lrelease by installing'
+                    ' the qt4-devel package in the Libs'
+                    ' section of the OSGeo4W Advanced Install')
     else:
-        locales = get_config(config).get('files', 'locales').split()
-        for locale in locales:
-            (name, ext) = os.path.splitext(locale)
-            if ext != '.ts':
-                print 'no ts extension'
-                locale = name + '.ts'
-            print cmd, locale
-            subprocess.check_call([cmd, os.path.join('i18n', locale)])
+        cfg = get_config(config)
+        if check_cfg(cfg, 'files', 'locales'):
+            locales = cfg.get('files', 'locales').split()
+            if locales:
+                for locale in locales:
+                    (name, ext) = os.path.splitext(locale)
+                    if ext != '.ts':
+                        print 'no ts extension'
+                        locale = name + '.ts'
+                    print cmd, locale
+                    subprocess.check_call([cmd, os.path.join('i18n', locale)])
+            else:
+                print "No translations are specified in {}".format(config)
                 
 
 @cli.command()
@@ -379,12 +400,20 @@ def create(name):
 
     extras = glob.glob('*.png') + glob.glob('metadata.txt')
 
+    locale_list = glob.glob('i18n/*.ts')
+    locales = []
+    for locale in locale_list:
+        locales.append(os.path.basename(locale))
+
+
     cfg = template.substitute(Name=cfg_name,
                               PythonFiles=' '.join(py_files),
                               MainDialog=' '.join(main_dlg),
                               CompiledUiFiles=' '.join(other_ui),
                               Resources=' '.join(resources),
-                              Extras=' '.join(extras))
+                              Extras=' '.join(extras),
+                              Locales=' '.join(locales))
+
 
     fname = name
     if os.path.exists(fname):
@@ -472,9 +501,12 @@ def compile_files(cfg):
             if os.path.exists(ui):
                 (base, ext) = os.path.splitext(ui)
                 output = "{}.py".format(base)
-                print "Compiling {} to {}".format(ui, output)
-                subprocess.check_call(['pyuic4', '-o', output, ui])
-                ui_count += 1
+                if file_changed(ui, output):
+                    print "Compiling {} to {}".format(ui, output)
+                    subprocess.check_call([pyuic4, '-o', output, ui])
+                    ui_count += 1
+                else:
+                    print "Skipping {} (unchanged)". format(ui)
             else:
                 print "{} does not exist---skipped".format(ui)
         print "Compiled {} UI files".format(ui_count)
@@ -491,9 +523,12 @@ def compile_files(cfg):
             if os.path.exists(res):
                 (base, ext) = os.path.splitext(res)
                 output = "{}_rc.py".format(base)
-                print "Compiling {} to {}".format(res, output)
-                subprocess.check_call(['pyrcc4', '-o', output, res])
-                res_count += 1
+                if file_changed(res, output):
+                    print "Compiling {} to {}".format(res, output)
+                    subprocess.check_call([pyrcc4, '-o', output, res])
+                    res_count += 1
+                else:
+                    print "Skipping {} (unchanged)". format(res)
             else:
                 print "{} does not exist---skipped".format(res)
         print "Compiled {} resource files".format(res_count)
@@ -513,7 +548,8 @@ def copy(source, destination):
 
     """
     try:
-        shutil.copytree(source, destination)
+        #shutil.copytree(source, destination)
+        copy_tree(source, destination)
     except OSError as e:
         # If the error was caused because the source wasn't a directory
         if e.errno == errno.ENOTDIR:
@@ -570,7 +606,7 @@ extra_dirs:
 
 # ISO code(s) for any locales (translations), separated by spaces.
 # Corresponding .ts files must exist in the i18n directory
-locales:
+locales: $Locales
 
 [help]
 # the built help directory that should be deployed with the plugin
@@ -579,3 +615,35 @@ dir: help/build/html
 target: help
 """
     return template
+
+def check_path(app):
+    """ Adapted from StackExchange:
+        http://stackoverflow.com/questions/377017
+    """
+    import os
+    def is_exe(fpath):
+        return os.path.exists(fpath) and os.access(fpath, os.X_OK)
+
+    def ext_candidates(fpath):
+        yield fpath
+        for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
+            yield fpath + ext
+
+    fpath, fname = os.path.split(app)
+    if fpath:
+        if is_exe(app):
+            return app
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, app)
+            for candidate in ext_candidates(exe_file):
+                if is_exe(candidate):
+                    return candidate
+
+    return None
+
+def file_changed(infile, outfile):
+    infile_s = os.stat(infile)
+    outfile_s = os.stat(outfile)
+    return infile_s.st_mtime > outfile_s.st_mtime
+
