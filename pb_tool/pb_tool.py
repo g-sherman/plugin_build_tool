@@ -84,8 +84,11 @@ def deploy_files(config, quick):
         cfg = get_config(config)
         plugin_dir = os.path.join(get_plugin_directory(), cfg.get('plugin', 'name'))
         if quick:
-            print "Doing quick install"
+            print "Doing quick deployment"
             install_files(plugin_dir, cfg)
+            print ("Quick deployment complete---if you have problems with your"
+                    " plugin, try doing a full deploy.")
+            
             
         else:
             print """Deploying will:
@@ -107,47 +110,57 @@ def deploy_files(config, quick):
                 install_files(plugin_dir, cfg)
 
 def install_files(plugin_dir, cfg):
+        errors = []
         install_files = get_install_files(cfg)
         # make the plugin directory if it doesn't exist
         if not os.path.exists(plugin_dir):
             os.mkdir(plugin_dir)
 
         fail = False
-        try:
-            for file in install_files:
-                print "Copying {}".format(file)
+        for file in install_files:
+            print ("Copying {}".format(file)),
+            try:
                 shutil.copy(file, os.path.join(plugin_dir, file))
-            # copy extra dirs
-        except OSError as oops:
-            print "Error copying files: {}, {}".format(file, oops.strerror)
-            fail = True
-        try:
+                print ""
+            except Exception as oops:
+                errors.append("Error copying files: {}, {}".format(
+                    file, oops.strerror))
+                print "----> ERROR"
+                fail = True
             extra_dirs = cfg.get('files', 'extra_dirs').split()
             #print "EXTRA DIRS: {}".format(extra_dirs)
-            for xdir in extra_dirs:
-                print "Copying contents of {} to {}".format(xdir, plugin_dir)
-                #shutil.copytree(xdir, "{}/{}".format(
-                #    plugin_dir, xdir))
+        for xdir in extra_dirs:
+            print "Copying contents of {} to {}".format(xdir, plugin_dir)
+            try:
                 copy_tree(xdir, "{}/{}".format(plugin_dir, xdir))
-        except OSError as oops:
-            print "Error copying directory: {}, {}".format(xdir, oops.strerror)
-            fail = True
+            except Exception as oops:
+                errors.append("Error copying directory: {}, {}".format(
+                    xdir, oops.message))
+                fail = True
+        help_src = cfg.get('help', 'dir')
+        help_target = os.path.join(
+            get_plugin_directory(),
+            cfg.get('plugin', 'name'),
+            cfg.get('help', 'target'))
+        print "Copying {} to {}".format(help_src, help_target)
+        #shutil.copytree(help_src, help_target)
         try:
-            help_src = cfg.get('help', 'dir')
-            help_target = os.path.join(
-                get_plugin_directory(),
-                cfg.get('plugin', 'name'),
-                cfg.get('help', 'target'))
-            print "Copying {} to {}".format(help_src, help_target)
-            #shutil.copytree(help_src, help_target)
             copy_tree(help_src, help_target)
-        except OSError as oops:
-            print "Error copying help files: {}, {}".format(help_src, oops.strerror)
+        except Exception as oops:
+            errors.append("Error copying help files: {}, {}".format(
+                help_src, oops.message))
             fail = True
         if fail:
-            print "\nOne or more files/directories failed to deploy."
-            print "To ensure proper deployment, try using dclean to delete"
-            print "the plugin before deploying."
+            print "\nERRORS:"
+            for error in errors:
+                print error
+            print ""
+            print "One or more files/directories specified in your config" 
+            print  "file failed to deploy---make sure they exist or if not" 
+            print  "needed remove them from the config."
+            print "To ensure proper deployment, make sure your UI and resource" 
+            print "files are compiled. Using dclean to delete"
+            print "the plugin before deploying may also help."
 
 
 def clean_deployment(ask_first=True, config='pb_tool.cfg'):
@@ -643,7 +656,10 @@ def check_path(app):
     return None
 
 def file_changed(infile, outfile):
-    infile_s = os.stat(infile)
-    outfile_s = os.stat(outfile)
-    return infile_s.st_mtime > outfile_s.st_mtime
+    try:
+        infile_s = os.stat(infile)
+        outfile_s = os.stat(outfile)
+        return infile_s.st_mtime > outfile_s.st_mtime
+    except:
+        return True
 
