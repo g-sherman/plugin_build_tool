@@ -272,17 +272,18 @@ def translate(config):
     """ Build translations using lrelease. Locales must be specified
     in the config file and the corresponding .ts file must exist in
     the i18n directory of your plugin."""
-    # see if we can find the lrelease app
-    cmd = check_path('lrelease')
+    possibles = ['lrelease', 'lrelease-qt4']
+    for binary in possibles:
+        cmd = check_path(binary)
+        if cmd:
+            break
     if not cmd:
-        cmd = check_path('lrelease-qt')
-    if not cmd:
-        print """Unable to find the lrelease command. Make sure it is installed
-                 and in your path."""
+        print ("Unable to find the lrelease command. Make sure it is installed"
+               "  and in your path.")
         if sys.platform == 'win32':
             print ('You can get lrelease by installing'
                     ' the qt4-devel package in the Libs'
-                    ' section of the OSGeo4W Advanced Install')
+                    '\nsection of the OSGeo4W Advanced Install.')
     else:
         cfg = get_config(config)
         if check_cfg(cfg, 'files', 'locales'):
