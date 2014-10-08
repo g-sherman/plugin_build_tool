@@ -32,6 +32,7 @@ from distutils.dir_util import copy_tree
 
 import click
 
+
 @click.group()
 def cli():
     """Simple Python tool to compile and deploy a QGIS plugin.
@@ -87,9 +88,8 @@ def deploy_files(config, quick):
             print "Doing quick deployment"
             install_files(plugin_dir, cfg)
             print ("Quick deployment complete---if you have problems with your"
-                    " plugin, try doing a full deploy.")
-            
-            
+                   " plugin, try doing a full deploy.")
+
         else:
             print """Deploying will:
             * Remove your currently deployed version
@@ -108,6 +108,7 @@ def deploy_files(config, quick):
                 compile_files(cfg)
                 build_docs()
                 install_files(plugin_dir, cfg)
+
 
 def install_files(plugin_dir, cfg):
         errors = []
@@ -159,10 +160,10 @@ def install_files(plugin_dir, cfg):
             for error in errors:
                 print error
             print ""
-            print "One or more files/directories specified in your config" 
-            print  "file failed to deploy---make sure they exist or if not" 
-            print  "needed remove them from the config."
-            print "To ensure proper deployment, make sure your UI and resource" 
+            print "One or more files/directories specified in your config"
+            print "file failed to deploy---make sure they exist or if not"
+            print "needed remove them from the config."
+            print "To ensure proper deployment, make sure your UI and resource"
             print "files are compiled. Using dclean to delete"
             print "the plugin before deploying may also help."
 
@@ -265,6 +266,7 @@ def build_docs():
     else:
         print "No help directory exists in the current directory"
 
+
 @cli.command()
 @click.option('--config', default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
@@ -282,8 +284,8 @@ def translate(config):
                "  and in your path.")
         if sys.platform == 'win32':
             print ('You can get lrelease by installing'
-                    ' the qt4-devel package in the Libs'
-                    '\nsection of the OSGeo4W Advanced Install.')
+                   ' the qt4-devel package in the Libs'
+                   '\nsection of the OSGeo4W Advanced Install.')
     else:
         cfg = get_config(config)
         if check_cfg(cfg, 'files', 'locales'):
@@ -298,7 +300,7 @@ def translate(config):
                     subprocess.check_call([cmd, os.path.join('i18n', locale)])
             else:
                 print "No translations are specified in {}".format(config)
-                
+
 
 @cli.command()
 @click.option('--config', default='pb_tool.cfg',
@@ -399,7 +401,7 @@ def create(name):
 
     # get the list of python files
     py_files = glob.glob('*.py')
-    
+
     # guess the main dialog ui file
     main_dlg = glob.glob('*_dialog_base.ui')
 
@@ -423,7 +425,6 @@ def create(name):
     for locale in locale_list:
         locales.append(os.path.basename(locale))
 
-
     cfg = template.substitute(Name=cfg_name,
                               PythonFiles=' '.join(py_files),
                               MainDialog=' '.join(main_dlg),
@@ -431,7 +432,6 @@ def create(name):
                               Resources=' '.join(resources),
                               Extras=' '.join(extras),
                               Locales=' '.join(locales))
-
 
     fname = name
     if os.path.exists(fname):
@@ -634,11 +634,13 @@ target: help
 """
     return template
 
+
 def check_path(app):
     """ Adapted from StackExchange:
         http://stackoverflow.com/questions/377017
     """
     import os
+
     def is_exe(fpath):
         return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
@@ -660,6 +662,7 @@ def check_path(app):
 
     return None
 
+
 def file_changed(infile, outfile):
     try:
         infile_s = os.stat(infile)
@@ -667,4 +670,3 @@ def file_changed(infile, outfile):
         return infile_s.st_mtime > outfile_s.st_mtime
     except:
         return True
-

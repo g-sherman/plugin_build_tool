@@ -116,10 +116,12 @@ Here is the help for a few of the commands, as reported using the --help option:
     $ pb_tool deploy --help
     Usage: pb_tool deploy [OPTIONS]
 
-      Deploy the plugin using parameters in pb_tool.cfg
+      Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg
 
     Options:
       --config TEXT  Name of the config file to use if other than pb_tool.cfg
+      -q, --quick    Do a quick install without compiling ui, resource, docs,
+                     and translation files
       --help         Show this message and exit.
 **Note**: Confirmation is required before deploying as it removes the current version.
 
