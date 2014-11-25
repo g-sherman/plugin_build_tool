@@ -22,7 +22,7 @@ from setuptools import setup
 
 setup(
     name='pb_tool',
-    version='1.2',
+    version='1.4',
     description='A tool to aid in QGIS Python plugin development',
     url='http://g-sherman.github.io/plugin_build_tool',
     author='Gary Sherman',
@@ -38,7 +38,9 @@ setup(
     keywords='QGIS PyQGIS',
     py_modules=['pb_tool'],
     install_requires=[
-        'Click'
+        'Click', 
+        'Sphinx',
+        'colorama'
     ],
     entry_points='''
         [console_scripts]

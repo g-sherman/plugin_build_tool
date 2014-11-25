@@ -62,7 +62,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("1.1, 2014-10-04")
+    click.echo("1.4, 2014-11-25")
 
 
 @cli.command()
@@ -76,19 +76,19 @@ def deploy(config, quick):
     deploy_files(config, quick)
 
 
-def deploy_files(config, quick):
+def deploy_files(config, quick=False):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
     if not os.path.exists(config):
-        click.echo("Configuration file {} is missing.".format(config))
+        click.secho("Configuration file {0} is missing.".format(config), fg='red')
     else:
         cfg = get_config(config)
         plugin_dir = os.path.join(get_plugin_directory(), cfg.get('plugin', 'name'))
         if quick:
-            print "Doing quick deployment"
+            click.secho("Doing quick deployment", fg='green')
             install_files(plugin_dir, cfg)
-            print ("Quick deployment complete---if you have problems with your"
-                   " plugin, try doing a full deploy.")
+            click.secho("Quick deployment complete---if you have problems with your"
+                   " plugin, try doing a full deploy.", fg='green')
 
         else:
             print """Deploying will:
@@ -102,9 +102,9 @@ def deploy_files(config, quick):
 
                 # clean the deployment
                 clean_deployment(False, config)
-                print "Deploying to {}".format(plugin_dir)
+                click.secho("Deploying to {0}".format(plugin_dir), fg='green')
                 # compile to make sure everything is fresh
-                print 'Compiling to make sure install is clean'
+                click.secho('Compiling to make sure install is clean', fg='green')
                 compile_files(cfg)
                 build_docs()
                 install_files(plugin_dir, cfg)
@@ -119,24 +119,25 @@ def install_files(plugin_dir, cfg):
 
         fail = False
         for file in install_files:
-            print ("Copying {}".format(file)),
+            click.secho("Copying {0}".format(file), fg='magenta', nl=False)
             try:
                 shutil.copy(file, os.path.join(plugin_dir, file))
                 print ""
             except Exception as oops:
-                errors.append("Error copying files: {}, {}".format(
+                errors.append("Error copying files: {0}, {1}".format(
                     file, oops.strerror))
                 click.echo(click.style(' ----> ERROR', fg='red'))
                 fail = True
             extra_dirs = cfg.get('files', 'extra_dirs').split()
             #print "EXTRA DIRS: {}".format(extra_dirs)
         for xdir in extra_dirs:
-            print "Copying contents of {} to {}".format(xdir, plugin_dir),
+            click.secho("Copying contents of {0} to {1}".format(xdir,
+                plugin_dir), fg='magenta', nl=False)
             try:
-                copy_tree(xdir, "{}/{}".format(plugin_dir, xdir))
+                copy_tree(xdir, "{0}/{1}".format(plugin_dir, xdir))
                 print ""
             except Exception as oops:
-                errors.append("Error copying directory: {}, {}".format(
+                errors.append("Error copying directory: {0}, {1}".format(
                     xdir, oops.message))
                 click.echo(click.style(' ----> ERROR', fg='red'))
                 fail = True
@@ -145,13 +146,14 @@ def install_files(plugin_dir, cfg):
             get_plugin_directory(),
             cfg.get('plugin', 'name'),
             cfg.get('help', 'target'))
-        print "Copying {} to {}".format(help_src, help_target),
+        click.secho("Copying {0} to {1}".format(help_src, help_target),
+            fg='magenta', nl=False)
         #shutil.copytree(help_src, help_target)
         try:
             copy_tree(help_src, help_target)
             print ""
         except Exception as oops:
-            errors.append("Error copying help files: {}, {}".format(
+            errors.append("Error copying help files: {0}, {1}".format(
                 help_src, oops.message))
             click.echo(click.style(' ----> ERROR', fg='red'))
             fail = True
@@ -160,12 +162,11 @@ def install_files(plugin_dir, cfg):
             for error in errors:
                 print error
             print ""
-            print "One or more files/directories specified in your config"
-            print "file failed to deploy---make sure they exist or if not"
-            print "needed remove them from the config."
-            print "To ensure proper deployment, make sure your UI and resource"
-            print "files are compiled. Using dclean to delete"
-            print "the plugin before deploying may also help."
+            print("One or more files/directories specified in your config file\n"
+            "failed to deploy---make sure they exist or if not needed remove\n"
+            "them from the config. To ensure proper deployment, make sure your\n"
+            "UI and resource files are compiled. Using dclean to delete the\n"
+            "plugin before deploying may also help.")
 
 
 def clean_deployment(ask_first=True, config='pb_tool.cfg'):
@@ -174,17 +175,17 @@ def clean_deployment(ask_first=True, config='pb_tool.cfg'):
     name = get_config(config).get('plugin', 'name')
     plugin_dir = os.path.join(get_plugin_directory(), name)
     if ask_first:
-        proceed = click.confirm('Delete the deployed plugin from {}?'.format(plugin_dir))
+        proceed = click.confirm('Delete the deployed plugin from {0}?'.format(plugin_dir))
     else:
         proceed = True
 
     if proceed:
-        click.echo('Removing plugin from {}'.format(plugin_dir))
+        click.echo('Removing plugin from {0}'.format(plugin_dir))
         try:
             shutil.rmtree(plugin_dir)
             return True
         except OSError as oops:
-            print 'Plugin was not deleted: {}'.format(oops.strerror)
+            print 'Plugin was not deleted: {0}'.format(oops.strerror)
     else:
         click.echo('Plugin was not deleted')
     return False
@@ -230,9 +231,9 @@ def clean(config):
     for file in files:
         try:
             os.unlink(file)
-            print "Deleted: {}".format(file)
+            print "Deleted: {0}".format(file)
         except OSError as oops:
-            print "Couldn't delete {}: {}".format(file, oops.strerror)
+            print "Couldn't delete {0}: {1}".format(file, oops.strerror)
 
 
 @cli.command()
@@ -299,7 +300,7 @@ def translate(config):
                     print cmd, locale
                     subprocess.check_call([cmd, os.path.join('i18n', locale)])
             else:
-                print "No translations are specified in {}".format(config)
+                print "No translations are specified in {0}".format(config)
 
 
 @cli.command()
@@ -310,6 +311,18 @@ def zip(config):
     suitable for uploading to the QGIS
     plugin repository"""
 
+    # check to see if we can find zip or 7z
+    zip = check_path('zip')
+    if not zip:
+        # check for 7z
+        zip = check_path('7z')
+        if not zip:
+            click.secho('zip or 7z not found. Unable to package the plugin',
+                    fg='red')
+            click.secho('Check your path or install a zip program', fg='red')
+            return
+    click.secho('Found zip: %s' % zip, fg='green')
+
     name = get_config(config).get('plugin', 'name', None)
     confirm = click.confirm('Do a dclean and deploy first?')
     if confirm:
@@ -317,19 +330,19 @@ def zip(config):
         deploy_files(config)
 
     confirm = click.confirm(
-        'Create a packaged plugin ({}.zip) from the deployed files?'.format(name))
+        'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
     if confirm:
         # delete the zip if it exists
-        if os.path.exists('{}.zip'.format(name)):
-            os.unlink('{}.zip'.format(name))
+        if os.path.exists('{0}.zip'.format(name)):
+            os.unlink('{0}.zip'.format(name))
         if name:
             cwd = os.getcwd()
             os.chdir(get_plugin_directory())
-            subprocess.check_call(['zip', '-r',
-                                   os.path.join(cwd, '{}.zip'.format(name)),
+            subprocess.check_call([zip, '-r',
+                                   os.path.join(cwd, '{0}.zip'.format(name)),
                                    name])
 
-            print ('The {}.zip archive has been created in the current directory'.format(name))
+            print ('The {0}.zip archive has been created in the current directory'.format(name))
         else:
             click.echo("Your config file is missing the plugin name (name=parameter)")
 
@@ -359,9 +372,9 @@ def validate(config):
         valid = False
 
     if valid:
-        print "Your {} file is valid and contains all mandatory items".format(config)
+        click.secho("Your {0} file is valid and contains all mandatory items".format(config), fg='green')
     else:
-        print "Your {} file is invalid".format(config)
+        click.secho("Your {0} file is invalid".format(config), fg='red')
 
 
 @cli.command()
@@ -374,8 +387,8 @@ def list(config):
             for line in cfg:
                 print line[:-1]
     else:
-        print "There is no {} file in the current directory".format(config)
-        print "We can't do anything without it"
+        click.secho("There is no {0} file in the current directory".format(config), fg='red')
+        click.secho("We can't do anything without it", fg='red')
 
 
 @cli.command()
@@ -435,14 +448,14 @@ def create(name):
 
     fname = name
     if os.path.exists(fname):
-        confirm = click.confirm('{} exists. Overwrite?'.format(name))
+        confirm = click.confirm('{0} exists. Overwrite?'.format(name))
         if not confirm:
             fname = click.prompt('Enter a name for the config file:')
 
     with open(fname, 'w') as f:
         f.write(cfg)
 
-    print "Created new config file in {}".format(fname)
+    print "Created new config file in {0}".format(fname)
 
 
 def check_cfg(cfg, section, name):
@@ -452,7 +465,7 @@ def check_cfg(cfg, section, name):
     except ConfigParser.NoOptionError as oops:
         print oops.message
     except ConfigParser.NoSectionError:
-        print "Missing section '{}' when looking for option '{}'".format(
+        print "Missing section '{0}' when looking for option '{1}'".format(
               section, name)
     return False
 
@@ -467,7 +480,7 @@ def get_config(config='pb_tool.cfg'):
         #click.echo(cfg.sections())
         return cfg
     else:
-        print "There is no {} file in the current directory".format(config)
+        print "There is no {0} file in the current directory".format(config)
         print "We can't do anything without it"
         sys.exit(1)
 
@@ -479,7 +492,7 @@ def compiled_ui(cfg):
         compiled = []
         for ui in uis:
             (base, ext) = os.path.splitext(ui)
-            compiled.append('{}.py'.format(base))
+            compiled.append('{0}.py'.format(base))
         #print "Compiled UI files: {}".format(compiled)
         return compiled
     except ConfigParser.NoSectionError as oops:
@@ -494,7 +507,7 @@ def compiled_resource(cfg):
         compiled = []
         for res in res_files:
             (base, ext) = os.path.splitext(res)
-            compiled.append('{}_rc.py'.format(base))
+            compiled.append('{0}_rc.py'.format(base))
         #print "Compiled resource files: {}".format(compiled)
         return compiled
     except ConfigParser.NoSectionError as oops:
@@ -518,38 +531,39 @@ def compile_files(cfg):
         for ui in ui_files:
             if os.path.exists(ui):
                 (base, ext) = os.path.splitext(ui)
-                output = "{}.py".format(base)
+                output = "{0}.py".format(base)
                 if file_changed(ui, output):
-                    print "Compiling {} to {}".format(ui, output)
+                    print "Compiling {0} to {1}".format(ui, output)
                     subprocess.check_call([pyuic4, '-o', output, ui])
                     ui_count += 1
                 else:
-                    print "Skipping {} (unchanged)". format(ui)
+                    print "Skipping {0} (unchanged)". format(ui)
             else:
-                print "{} does not exist---skipped".format(ui)
-        print "Compiled {} UI files".format(ui_count)
+                print "{0} does not exist---skipped".format(ui)
+        print "Compiled {0} UI files".format(ui_count)
 
     # check to see if we have pyrcc4
     pyrcc4 = check_path('pyrcc4')
 
     if not pyrcc4:
-        print "pyrcc4 is not in your path---unable to compile your resource file(s)"
+        click.secho("pyrcc4 is not in your path---unable to compile your resource file(s)",
+                fg='red')
     else:
         res_files = cfg.get('files', 'resource_files').split()
         res_count = 0
         for res in res_files:
             if os.path.exists(res):
                 (base, ext) = os.path.splitext(res)
-                output = "{}_rc.py".format(base)
+                output = "{0}_rc.py".format(base)
                 if file_changed(res, output):
-                    print "Compiling {} to {}".format(res, output)
+                    print "Compiling {0} to {1}".format(res, output)
                     subprocess.check_call([pyrcc4, '-o', output, res])
                     res_count += 1
                 else:
-                    print "Skipping {} (unchanged)". format(res)
+                    print "Skipping {0} (unchanged)". format(res)
             else:
-                print "{} does not exist---skipped".format(res)
-        print "Compiled {} resource files".format(res_count)
+                print "{0} does not exist---skipped".format(res)
+        print "Compiled {0} resource files".format(res_count)
 
 
 def copy(source, destination):
