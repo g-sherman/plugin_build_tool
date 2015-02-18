@@ -62,7 +62,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("1.4, 2014-11-25")
+    click.echo("1.5, 2014-11-25")
 
 
 @cli.command()
@@ -76,7 +76,7 @@ def deploy(config, quick):
     deploy_files(config, quick)
 
 
-def deploy_files(config, quick=False):
+def deploy_files(config, confirm=True, quick=False):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
     if not os.path.exists(config):
@@ -91,15 +91,18 @@ def deploy_files(config, quick=False):
                    " plugin, try doing a full deploy.", fg='green')
 
         else:
-            print """Deploying will:
-            * Remove your currently deployed version
-            * Compile the ui and resource files
-            * Build the help docs
-            * Copy everything to your .qgis2/python/plugins directory
-            """
+            if confirm:
+                print """Deploying will:
+                * Remove your currently deployed version
+                * Compile the ui and resource files
+                * Build the help docs
+                * Copy everything to your .qgis2/python/plugins directory
+                """
+                proceed = click.confirm("Proceed?")
+            else:
+                proceed = True
 
-            if click.confirm("Proceed?"):
-
+            if proceed:
                 # clean the deployment
                 clean_deployment(False, config)
                 click.secho("Deploying to {0}".format(plugin_dir), fg='green')
@@ -312,6 +315,7 @@ def zip(config):
     plugin repository"""
 
     # check to see if we can find zip or 7z
+    use_7z = False
     zip = check_path('zip')
     if not zip:
         # check for 7z
@@ -321,16 +325,19 @@ def zip(config):
                     fg='red')
             click.secho('Check your path or install a zip program', fg='red')
             return
+        else:
+            use_7z =True
     click.secho('Found zip: %s' % zip, fg='green')
 
     name = get_config(config).get('plugin', 'name', None)
     confirm = click.confirm('Do a dclean and deploy first?')
     if confirm:
-        clean_deployment(False, config)
-        deploy_files(config)
+        #clean_deployment(False, config)
+        deploy_files(config, confirm=False)
 
-    confirm = click.confirm(
-        'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
+    #confirm = click.confirm(
+    #    'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
+    confirm = True
     if confirm:
         # delete the zip if it exists
         if os.path.exists('{0}.zip'.format(name)):
@@ -338,9 +345,14 @@ def zip(config):
         if name:
             cwd = os.getcwd()
             os.chdir(get_plugin_directory())
-            subprocess.check_call([zip, '-r',
-                                   os.path.join(cwd, '{0}.zip'.format(name)),
-                                   name])
+            if use_7z:
+                subprocess.check_call([zip, 'a', '-r',
+                                       os.path.join(cwd, '{0}.zip'.format(name)),
+                                       name])
+            else:
+                subprocess.check_call([zip, '-r',
+                                       os.path.join(cwd, '{0}.zip'.format(name)),
+                                       name])
 
             print ('The {0}.zip archive has been created in the current directory'.format(name))
         else:

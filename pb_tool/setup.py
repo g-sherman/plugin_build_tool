@@ -22,7 +22,7 @@ from setuptools import setup
 
 setup(
     name='pb_tool',
-    version='1.4',
+    version='1.5',
     description='A tool to aid in QGIS Python plugin development',
     url='http://g-sherman.github.io/plugin_build_tool',
     author='Gary Sherman',
