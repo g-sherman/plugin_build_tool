@@ -45,7 +45,11 @@ def cli():
 
     See http://g-sherman.github.io/plugin_build_tool for for an example config
     file. You can also use the create command to generate a best-guess config
-    file for an existing project, then tweak as needed."""
+    file for an existing project, then tweak as needed.
+    
+    Bugs and enhancement requests, see:
+        https://github.com/g-sherman/plugin_build_tool
+    """
     pass
 
 
@@ -62,7 +66,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("1.5, 2014-11-25")
+    click.echo("1.6, 2014-02-18")
 
 
 @cli.command()
@@ -73,7 +77,7 @@ def version():
               and translation files')
 def deploy(config, quick):
     """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
-    deploy_files(config, quick)
+    deploy_files(config, quick=quick)
 
 
 def deploy_files(config, confirm=True, quick=False):
@@ -309,7 +313,9 @@ def translate(config):
 @cli.command()
 @click.option('--config', default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
-def zip(config):
+@click.option('--quick', '-q', is_flag=True,
+              help='Do a quick packaging without dclean and deploy')
+def zip(config, quick):
     """ Package the plugin into a zip file
     suitable for uploading to the QGIS
     plugin repository"""
@@ -330,10 +336,11 @@ def zip(config):
     click.secho('Found zip: %s' % zip, fg='green')
 
     name = get_config(config).get('plugin', 'name', None)
-    confirm = click.confirm('Do a dclean and deploy first?')
-    if confirm:
-        #clean_deployment(False, config)
-        deploy_files(config, confirm=False)
+    if not quick:
+        confirm = click.confirm('Do a dclean and deploy first?')
+        if confirm:
+            #clean_deployment(False, config)
+            deploy_files(config, confirm=False)
 
     #confirm = click.confirm(
     #    'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
