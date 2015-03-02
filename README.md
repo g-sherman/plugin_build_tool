@@ -32,7 +32,7 @@ You can also install using easy_install:
     easy_install pb_tool
 
 For information on getting setup to develop on Windows, see:
-[A Quick Guide to Getting Started with PyQGIS on Windows](http://spatialgalaxy.net/a-quick-guide-to-getting-started-with-pyqgis-on-windows)
+[A Quick Guide to Getting Started with PyQGIS on Windows](http://spatialgalaxy.net/2014/10/09/a-quick-guide-to-getting-started-with-PyQGIS-on-windows/)
 
 ##Usage
 
