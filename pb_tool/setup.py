@@ -22,11 +22,14 @@ from setuptools import setup
 
 setup(
     name='pb_tool',
-    version='1.6',
+    version='1.8.1',
     description='A tool to aid in QGIS Python plugin development',
+    long_description='pb_tool provides commands to deploy and publish a QGIS Python plugin.',
     url='http://g-sherman.github.io/plugin_build_tool',
     author='Gary Sherman',
     author_email='gsherman@geoapt.com',
+    maintainer='Gary Sherman',
+    maintainer_email='gsherman@geoapt.com',
     license='GPL2',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
@@ -36,6 +39,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Topic :: Scientific/Engineering :: GIS'],
     keywords='QGIS PyQGIS',
+    platforms=['Linux', 'Windows', 'OS X'],
     py_modules=['pb_tool'],
     install_requires=[
         'Click', 

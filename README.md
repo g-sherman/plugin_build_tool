@@ -70,9 +70,18 @@ To display the available commands, just enter `pb_tool` on the command line:
       doc         Build HTML version of the help files using...
       list        List the contents of the configuration file
       translate   Build translations using lrelease.
+      update      Check for update to pb_tool
       validate    Check the pb_tool.cfg file for mandatory...
       version     Return the version of pb_tool and exit
       zip         Package the plugin into a zip file suitable...
+
+###Aliases
+
+Every command can be referred to by an unique alias. For example:
+
+ `pb_tool de` is the same as `pb_tool deploy`
+
+Include just enough characters to make it unique.
 
 
 ##Command Help

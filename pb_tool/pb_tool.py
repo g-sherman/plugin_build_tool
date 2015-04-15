@@ -25,6 +25,7 @@ import subprocess
 import shutil
 import errno
 import glob
+import urllib2
 import ConfigParser
 from string import Template
 from distutils.dir_util import copy_tree
@@ -32,8 +33,23 @@ from distutils.dir_util import copy_tree
 
 import click
 
+class AliasedGroup(click.Group):
 
-@click.group()
+    def get_command(self, ctx, cmd_name):
+        rv = click.Group.get_command(self, ctx, cmd_name)
+        if rv is not None:
+            return rv
+        matches = [x for x in self.list_commands(ctx)
+                   if x.startswith(cmd_name)]
+        if not matches:
+            return None
+        elif len(matches) == 1:
+            return click.Group.get_command(self, ctx, matches[0])
+        ctx.fail('Too many matches: %s' % ', '.join(sorted(matches)))
+
+
+#@click.group()
+@click.command(cls=AliasedGroup)
 def cli():
     """Simple Python tool to compile and deploy a QGIS plugin.
     For help on a command use --help after the command:
@@ -52,6 +68,11 @@ def cli():
     """
     pass
 
+def __version():
+    """ return the current version """
+    # TODO update this with each release
+    return "1.8.1"
+
 
 def get_install_files(cfg):
     python_files = cfg.get('files', 'python_files').split()
@@ -66,7 +87,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("1.6, 2014-02-18")
+    click.echo("1.8.1, 2015-04-15")
 
 
 @cli.command()
@@ -476,6 +497,24 @@ def create(name):
 
     print "Created new config file in {0}".format(fname)
 
+@cli.command()
+def update():
+    """ Check for update to pb_tool """
+    try:
+        u = urllib2.urlopen('http://geoapt.net/pb_tool/current_version.txt')
+        version = u.read()[:-1]
+        click.secho("Latest version is %s" % version, fg='green')
+        if version == __version():
+            click.secho("Your version is up to date", fg='green')
+        else:
+            click.secho("You have Version %s" % __version(), fg='green')
+            click.secho("You can upgrade by running this command:")
+            cmd = 'pip install --upgrade pb_tool'
+            print "   %s" % cmd
+
+    except urllib2.URLError as uoops:
+        click.secho("Unable to check for update.")
+        click.secho("%s" % uoops.reason)
 
 def check_cfg(cfg, section, name):
     try:
