@@ -335,7 +335,7 @@ def translate(config):
 @click.option('--config', default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
 @click.option('--quick', '-q', is_flag=True,
-              help='Do a quick packaging without dclean and deploy')
+              help='Do a quick packaging without dclean and deploy (plugin must have been previously deployed)')
 def zip(config, quick):
     """ Package the plugin into a zip file
     suitable for uploading to the QGIS
@@ -358,21 +358,32 @@ def zip(config, quick):
 
     name = get_config(config).get('plugin', 'name', None)
     if not quick:
-        confirm = click.confirm('Do a dclean and deploy first?')
-        if confirm:
+        proceed = click.confirm('Do a dclean and deploy first?')
+        if proceed:
             #clean_deployment(False, config)
             deploy_files(config, confirm=False)
+    else:
+        # Check to see if the plugin directory exists, otherwise we can't
+        # do a quick zip
+        if not os.path.exists(os.path.join(get_plugin_directory(), name)):
+            click.secho("You must deploy the plugin before you can package it using -q", fg='red')
+            proceed = click.confirm('Do you want to deploy and proceed with packaging?') 
+            if proceed:
+                deploy_files(config, confirm=False)
+        else:
+            proceed = True
 
     #confirm = click.confirm(
     #    'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
-    confirm = True
-    if confirm:
+    #confirm = True
+    if proceed:
         # delete the zip if it exists
         if os.path.exists('{0}.zip'.format(name)):
             os.unlink('{0}.zip'.format(name))
         if name:
             cwd = os.getcwd()
             os.chdir(get_plugin_directory())
+            # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
             if use_7z:
                 subprocess.check_call([zip, 'a', '-r',
                                        os.path.join(cwd, '{0}.zip'.format(name)),
