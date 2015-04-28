@@ -40,6 +40,7 @@ setup(
         'Topic :: Scientific/Engineering :: GIS'],
     keywords='QGIS PyQGIS',
     platforms=['Linux', 'Windows', 'OS X'],
+    include_package_data=True,
     py_modules=['pb_tool'],
     install_requires=[
         'Click', 
