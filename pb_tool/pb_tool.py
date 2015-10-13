@@ -88,7 +88,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("1.9, 2015-04-23")
+    click.echo("1.9.1, 2015-10-13")
 
 
 @cli.command()
@@ -612,7 +612,7 @@ def compiled_resource(cfg):
         compiled = []
         for res in res_files:
             (base, ext) = os.path.splitext(res)
-            compiled.append('{0}_rc.py'.format(base))
+            compiled.append('{0}.py'.format(base))
         #print "Compiled resource files: {}".format(compiled)
         return compiled
     except ConfigParser.NoSectionError as oops:
@@ -660,7 +660,7 @@ def compile_files(cfg):
         for res in res_files:
             if os.path.exists(res):
                 (base, ext) = os.path.splitext(res)
-                output = "{0}_rc.py".format(base)
+                output = "{0}.py".format(base)
                 if file_changed(res, output):
                     print "Compiling {0} to {1}".format(res, output)
                     subprocess.check_call([pyrcc4, '-o', output, res])
