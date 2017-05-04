@@ -99,9 +99,12 @@ def version():
               is_flag=True,
               help='Do a quick install without compiling ui, resource, docs, \
               and translation files')
-def deploy(config, quick):
+@click.option('--no-confirm', '-y',
+              is_flag=True,
+              help='Don\'t ask for confirmation to overwrite existing files')
+def deploy(config, quick, no_confirm):
     """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
-    deploy_files(config, quick=quick)
+    deploy_files(config, quick=quick, confirm=not no_confirm)
 
 
 def deploy_files(config, confirm=True, quick=False):
