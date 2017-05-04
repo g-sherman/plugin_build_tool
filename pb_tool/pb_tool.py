@@ -700,12 +700,8 @@ def copy(source, destination):
 
 
 def get_plugin_directory():
-    if sys.platform == 'win32':
-        home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
-    else:
-        home = os.environ['HOME']
+    home = os.path.expanduser('~')
     qgis2 = os.path.join('.qgis2', 'python', 'plugins')
-
     return os.path.join(home, qgis2)
 
 
