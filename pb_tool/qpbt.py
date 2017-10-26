@@ -1,6 +1,6 @@
 """
 /***************************************************************************
-                                    pb_tool
+                                    qpbt
                  A tool for building and deploying QGIS plugins
                               -------------------
         begin                : 2014-09-24
@@ -25,8 +25,8 @@ import subprocess
 import shutil
 import errno
 import glob
-import urllib2
-import ConfigParser
+import urllib.request
+import configparser
 from string import Template
 from distutils.dir_util import copy_tree
 
@@ -88,7 +88,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("1.9.1, 2015-10-13")
+    click.echo("3.0.0, 2017-10-29")
 
 
 @cli.command()
@@ -127,12 +127,12 @@ def deploy_files(config, confirm=True, quick=False):
 
         else:
             if confirm:
-                print """Deploying will:
+                print("""Deploying will:
                 * Remove your currently deployed version
                 * Compile the ui and resource files
                 * Build the help docs
                 * Copy everything to your .qgis2/python/plugins directory
-                """
+                """)
 
                 proceed = click.confirm("Proceed?")
             else:
@@ -162,7 +162,7 @@ def install_files(plugin_dir, cfg):
         click.secho("Copying {0}".format(file), fg='magenta', nl=False)
         try:
             shutil.copy(file, os.path.join(plugin_dir, file))
-            print ""
+            print("")
         except Exception as oops:
             errors.append(
                 "Error copying files: {0}, {1}".format(file, oops.strerror))
@@ -176,7 +176,7 @@ def install_files(plugin_dir, cfg):
                     nl=False)
         try:
             copy_tree(xdir, "{0}/{1}".format(plugin_dir, xdir))
-            print ""
+            print("")
         except Exception as oops:
             errors.append(
                 "Error copying directory: {0}, {1}".format(xdir, oops.message))
@@ -192,17 +192,17 @@ def install_files(plugin_dir, cfg):
     #shutil.copytree(help_src, help_target)
     try:
         copy_tree(help_src, help_target)
-        print ""
+        print("")
     except Exception as oops:
         errors.append("Error copying help files: {0}, {1}".format(
             help_src, oops.message))
         click.echo(click.style(' ----> ERROR', fg='red'))
         fail = True
     if fail:
-        print "\nERRORS:"
+        print("\nERRORS:")
         for error in errors:
-            print error
-        print ""
+            print(error)
+        print("")
         print(
             "One or more files/directories specified in your config file\n"
             "failed to deploy---make sure they exist or if not needed remove\n"
@@ -228,7 +228,7 @@ def clean_deployment(ask_first=True, config='pb_tool.cfg'):
             shutil.rmtree(plugin_dir)
             return True
         except OSError as oops:
-            print 'Plugin was not deleted: {0}'.format(oops.strerror)
+            print('Plugin was not deleted: {0}'.format(oops.strerror))
     else:
         click.echo('Plugin was not deleted')
     return False
@@ -250,7 +250,7 @@ def clean_docs():
         subprocess.check_call([makeprg, 'clean'])
         os.chdir(cwd)
     else:
-        print "No help directory exists in the current directory"
+        print("No help directory exists in the current directory")
 
 
 @cli.command()
@@ -276,9 +276,9 @@ def clean(config):
     for file in files:
         try:
             os.unlink(file)
-            print "Deleted: {0}".format(file)
+            print("Deleted: {0}".format(file))
         except OSError as oops:
-            print "Couldn't delete {0}: {1}".format(file, oops.strerror)
+            print("Couldn't delete {0}: {1}".format(file, oops.strerror))
 
 
 @cli.command()
@@ -311,7 +311,7 @@ def build_docs():
         subprocess.check_call([makeprg, 'html'])
         os.chdir(cwd)
     else:
-        print "No help directory exists in the current directory"
+        print("No help directory exists in the current directory")
 
 
 @cli.command()
@@ -342,12 +342,12 @@ def translate(config):
                 for locale in locales:
                     (name, ext) = os.path.splitext(locale)
                     if ext != '.ts':
-                        print 'no ts extension'
+                        print('no ts extension')
                         locale = name + '.ts'
-                    print cmd, locale
+                    print(cmd, locale)
                     subprocess.check_call([cmd, os.path.join('i18n', locale)])
             else:
-                print "No translations are specified in {0}".format(config)
+                print("No translations are specified in {0}".format(config))
 
 
 @cli.command()
@@ -379,7 +379,7 @@ def zip(config, quick):
             use_7z = True
     click.secho('Found zip: %s' % zip, fg='green')
 
-    name = get_config(config).get('plugin', 'name', None)
+    name = get_config(config).get('plugin', 'name', fallback=None)
     if not quick:
         proceed = click.confirm('Do a dclean and deploy first?')
         if proceed:
@@ -432,7 +432,8 @@ def zip(config, quick):
               help='Name of the config file to use if other than pb_tool.cfg')
 def validate(config):
     """
-    Check the pb_tool.cfg file for mandatory sections/files
+    Check the pb_tool.cfg file for mandatory sections/files.
+    Detect the plugin install path and presence of a suitable zip utilty.
     """
     valid = True
     cfg = get_config(config)
@@ -451,6 +452,8 @@ def validate(config):
     if not check_cfg(cfg, 'help', 'target'):
         valid = False
 
+
+    click.secho("Using Python {}".format(sys.version), fg='green')
     if valid:
         click.secho(
             "Your {0} file is valid and contains all mandatory items".format(
@@ -458,6 +461,31 @@ def validate(config):
             fg='green')
     else:
         click.secho("Your {0} file is invalid".format(config), fg='red')
+    try:
+        from PyQt5.QtCore import QStandardPaths, QDir
+        path = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
+        plugin_path = os.path.join(QDir.homePath(), path, 'QGIS/QGIS3/profiles/default/python/plugins')
+        click.secho("Plugin path: {}".format(plugin_path), fg='green')
+    except:
+        click.secho("""Unable to determine location of your QGIS Plugin directory.
+        Make sure your QGIS environment is setup properly for development and Python
+        has access to the PyQt4.QtCore module.""", fg='red')
+
+    zipbin = find_zip()
+    a7z = find_7z()
+    if zipbin:
+        zip_utility = zipbin
+    elif a7z:
+        zip_utility = a7z
+    else:
+        zip_utility = None
+    if not zip_utility:
+        click.secho('zip or 7z not found. Unable to package the plugin',
+                    fg='red')
+        click.secho('Check your path or install a zip program', fg='red')
+    else:
+        click.secho('Found suitable zip utility: {}'.format(zip_utility), fg='green')
+
 
 
 @cli.command()
@@ -469,7 +497,7 @@ def list(config):
     if os.path.exists(config):
         with open(config) as cfg:
             for line in cfg:
-                print line[:-1]
+                print(line[:-1])
     else:
         click.secho(
             "There is no {0} file in the current directory".format(config),
@@ -489,15 +517,15 @@ def create(name):
     template = Template(config_template())
     # guess the plugin name
     try:
-        metadata = ConfigParser.ConfigParser()
+        metadata = configparser.ConfigParser()
         metadata.read('metadata.txt')
         cfg_name = metadata.get('general', 'name')
-    except ConfigParser.NoOptionError as oops:
-        print oops.message
-    except ConfigParser.NoSectionError as secoops:
-        print secoops.message
+    except configparser.NoOptionError as oops:
+        print(oops.message)
+    except configparser.NoSectionError as secoops:
+        print(secoops.message)
         #print "Missing section '{}' when looking for option '{}'".format(
-        print "Unable to get the name of your plugin from metadata.txt"
+        print("Unable to get the name of your plugin from metadata.txt")
         cfg_name = click.prompt("Name of the plugin:")
 
     # get the list of python files
@@ -543,14 +571,14 @@ def create(name):
     with open(fname, 'w') as f:
         f.write(cfg)
 
-    print "Created new config file in {0}".format(fname)
+    print("Created new config file in {0}".format(fname))
 
 
 @cli.command()
 def update():
     """ Check for update to pb_tool """
     try:
-        u = urllib2.urlopen('http://geoapt.net/pb_tool/current_version.txt')
+        u = urllib.urlopen('http://geoapt.net/pb_tool/current_version.txt')
         version = u.read()[:-1]
         click.secho("Latest version is %s" % version, fg='green')
         if version == __version():
@@ -559,9 +587,9 @@ def update():
             click.secho("You have Version %s" % __version(), fg='green')
             click.secho("You can upgrade by running this command:")
             cmd = 'pip install --upgrade pb_tool'
-            print "   %s" % cmd
+            print("   %s" % cmd)
 
-    except urllib2.URLError as uoops:
+    except urllib.URLError as uoops:
         click.secho("Unable to check for update.")
         click.secho("%s" % uoops.reason)
 
@@ -570,11 +598,11 @@ def check_cfg(cfg, section, name):
     try:
         cfg.get(section, name)
         return True
-    except ConfigParser.NoOptionError as oops:
-        print oops.message
-    except ConfigParser.NoSectionError:
-        print "Missing section '{0}' when looking for option '{1}'".format(
-            section, name)
+    except configparser.NoOptionError as oops:
+        print(oops.message)
+    except configparser.NoSectionError:
+        print("Missing section '{0}' when looking for option '{1}'".format(
+            section, name))
     return False
 
 
@@ -583,13 +611,13 @@ def get_config(config='pb_tool.cfg'):
     Read the config file pb_tools.cfg and return it
     """
     if os.path.exists(config):
-        cfg = ConfigParser.ConfigParser()
+        cfg = configparser.ConfigParser()
         cfg.read(config)
         #click.echo(cfg.sections())
         return cfg
     else:
-        print "There is no {0} file in the current directory".format(config)
-        print "We can't do anything without it"
+        print("There is no {0} file in the current directory".format(config))
+        print("We can't do anything without it")
         sys.exit(1)
 
 
@@ -603,8 +631,8 @@ def compiled_ui(cfg):
             compiled.append('{0}.py'.format(base))
         #print "Compiled UI files: {}".format(compiled)
         return compiled
-    except ConfigParser.NoSectionError as oops:
-        print oops.message
+    except configparser.NoSectionError as oops:
+        print(oops.message)
         sys.exit(1)
 
 
@@ -618,8 +646,8 @@ def compiled_resource(cfg):
             compiled.append('{0}.py'.format(base))
         #print "Compiled resource files: {}".format(compiled)
         return compiled
-    except ConfigParser.NoSectionError as oops:
-        print oops.message
+    except configparser.NoSectionError as oops:
+        print(oops.message)
         sys.exit(1)
 
 
@@ -628,11 +656,11 @@ def compile_files(cfg):
     # TODO add changed detection
     #cfg = get_config(config)
 
-    # check to see if we have pyuic4
-    pyuic4 = check_path('pyuic4')
+    # check to see if we have pyuic5
+    pyuic5 = check_path('pyuic5')
 
-    if not pyuic4:
-        print "pyuic4 is not in your path---unable to compile your ui files"
+    if not pyuic5:
+        print("pyuic5 is not in your path---unable to compile your ui files")
     else:
         ui_files = cfg.get('files', 'compiled_ui_files').split()
         ui_count = 0
@@ -641,21 +669,21 @@ def compile_files(cfg):
                 (base, ext) = os.path.splitext(ui)
                 output = "{0}.py".format(base)
                 if file_changed(ui, output):
-                    print "Compiling {0} to {1}".format(ui, output)
-                    subprocess.check_call([pyuic4, '-o', output, ui])
+                    print("Compiling {0} to {1}".format(ui, output))
+                    subprocess.check_call([pyuic5, '-o', output, ui])
                     ui_count += 1
                 else:
-                    print "Skipping {0} (unchanged)".format(ui)
+                    print("Skipping {0} (unchanged)".format(ui))
             else:
-                print "{0} does not exist---skipped".format(ui)
-        print "Compiled {0} UI files".format(ui_count)
+                print("{0} does not exist---skipped".format(ui))
+        print("Compiled {0} UI files".format(ui_count))
 
-    # check to see if we have pyrcc4
-    pyrcc4 = check_path('pyrcc4')
+    # check to see if we have pyrcc5
+    pyrcc5 = check_path('pyrcc5')
 
-    if not pyrcc4:
+    if not pyrcc5:
         click.secho(
-            "pyrcc4 is not in your path---unable to compile your resource file(s)",
+            "pyrcc5 is not in your path---unable to compile your resource file(s)",
             fg='red')
     else:
         res_files = cfg.get('files', 'resource_files').split()
@@ -665,14 +693,14 @@ def compile_files(cfg):
                 (base, ext) = os.path.splitext(res)
                 output = "{0}.py".format(base)
                 if file_changed(res, output):
-                    print "Compiling {0} to {1}".format(res, output)
-                    subprocess.check_call([pyrcc4, '-o', output, res])
+                    print("Compiling {0} to {1}".format(res, output))
+                    subprocess.check_call([pyrcc5, '-o', output, res])
                     res_count += 1
                 else:
-                    print "Skipping {0} (unchanged)".format(res)
+                    print("Skipping {0} (unchanged)".format(res))
             else:
-                print "{0} does not exist---skipped".format(res)
-        print "Compiled {0} resource files".format(res_count)
+                print("{0} does not exist---skipped".format(res))
+        print("Compiled {0} resource files".format(res_count))
 
 
 def copy(source, destination):
@@ -700,9 +728,18 @@ def copy(source, destination):
 
 
 def get_plugin_directory():
-    home = os.path.expanduser('~')
-    qgis2 = os.path.join('.qgis2', 'python', 'plugins')
-    return os.path.join(home, qgis2)
+    try:
+        from PyQt5.QtCore import QStandardPaths, QDir
+        path = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
+        plugin_path = os.path.join(QDir.homePath(), path, 'QGIS/QGIS3/profiles/default/python/plugins')
+        click.secho("Plugin path: {}".format(plugin_path), fg='green')
+    except:
+        click.secho("""Unable to determine location of your QGIS Plugin directory.
+        Make sure your QGIS environment is setup properly for development and Python
+        has access to the PyQt4.QtCore module.""", fg='red')
+        plugin_path = None
+
+    return plugin_path
 
 
 def config_template():
@@ -790,3 +827,13 @@ def file_changed(infile, outfile):
         return infile_s.st_mtime > outfile_s.st_mtime
     except:
         return True
+
+def find_zip():
+    # check to see if we can find zip 
+    zip = check_path('zip')
+    return zip
+
+def find_7z():
+    # check for 7z
+    zip = check_path('7z')
+    return zip
