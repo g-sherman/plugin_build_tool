@@ -1,2 +1,2 @@
-include templates/basic.tmpl
-include templates/dialog.tmpl
+include basic.tmpl
+include dialog.tmpl

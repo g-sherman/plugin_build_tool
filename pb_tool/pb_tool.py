@@ -30,6 +30,7 @@ import configparser
 from string import Template
 from distutils.dir_util import copy_tree
 
+from template_basic import *
 import click
 
 

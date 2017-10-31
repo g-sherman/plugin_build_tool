@@ -21,10 +21,10 @@
 from setuptools import setup
 
 setup(
-    name='qpbt',
+    name='pb_tool',
     version='3.0.0',
-    description='A tool to aid in QGIS Python plugin development',
-    long_description='qpbt provides commands to deploy and publish a QGIS Python plugin.',
+    description='Plugin build tool for QGIS: A tool to aid in QGIS Python plugin development',
+    long_description='pb_tool provides commands to deploy and publish a QGIS Python plugin.',
     url='http://g-sherman.github.io/plugin_build_tool',
     author='Gary Sherman',
     author_email='gsherman@geoapt.com',
@@ -41,7 +41,8 @@ setup(
     keywords='QGIS PyQGIS',
     platforms=['Linux', 'Windows', 'OS X'],
     include_package_data=True,
-    py_modules=['qpbt'],
+    package_data = {'': ['templates/basic.tmpl'],},
+    py_modules=['pb_tool', 'template_basic'],
     install_requires=[
         'Click', 
         'Sphinx',
@@ -49,6 +50,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        qpbt=qpbt:cli
+        pb_tool=pb_tool:cli
     ''',
 )
