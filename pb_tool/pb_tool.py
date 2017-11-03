@@ -71,7 +71,7 @@ def cli():
 def __version():
     """ return the current version """
     # TODO update this with each release
-    return "1.9"
+    return "2.0.0"
 
 
 def get_install_files(cfg):
@@ -88,13 +88,16 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("1.9.1, 2015-10-13")
+    click.echo("2.0.0, 2017-11-03")
 
 
 @cli.command()
 @click.option('--config',
               default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
+@click.option('--plugin_path', '-p',
+              default=None,
+              help='Specify the directory where to deploy your plugin if not using the standard location')
 @click.option('--quick', '-q',
               is_flag=True,
               help='Do a quick install without compiling ui, resource, docs, \
@@ -102,12 +105,12 @@ def version():
 @click.option('--no-confirm', '-y',
               is_flag=True,
               help='Don\'t ask for confirmation to overwrite existing files')
-def deploy(config, quick, no_confirm):
+def deploy(config, plugin_path, quick, no_confirm):
     """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
-    deploy_files(config, quick=quick, confirm=not no_confirm)
+    deploy_files(config, plugin_path, quick=quick, confirm=not no_confirm)
 
 
-def deploy_files(config, confirm=True, quick=False):
+def deploy_files(config, plugin_path, confirm=True, quick=False):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
     if not os.path.exists(config):
@@ -115,15 +118,17 @@ def deploy_files(config, confirm=True, quick=False):
                     fg='red')
     else:
         cfg = get_config(config)
-        plugin_dir = os.path.join(get_plugin_directory(), cfg.get('plugin',
-                                                                  'name'))
+        if plugin_path:
+            plugin_dir = os.path.join(plugin_path, cfg.get('plugin', 'name'))
+        else:
+            plugin_dir = os.path.join(get_plugin_directory(), cfg.get('plugin', 'name'))
+
         if quick:
             click.secho("Doing quick deployment", fg='green')
             install_files(plugin_dir, cfg)
             click.secho(
                 "Quick deployment complete---if you have problems with your"
-                " plugin, try doing a full deploy.",
-                fg='green')
+                " plugin, try doing a full deploy.", fg='green')
 
         else:
             if confirm:
@@ -131,8 +136,8 @@ def deploy_files(config, confirm=True, quick=False):
                 * Remove your currently deployed version
                 * Compile the ui and resource files
                 * Build the help docs
-                * Copy everything to your .qgis2/python/plugins directory
-                """
+                * Copy everything to your {} directory
+                """.format(plugin_dir)
 
                 proceed = click.confirm("Proceed?")
             else:
@@ -183,8 +188,7 @@ def install_files(plugin_dir, cfg):
             click.echo(click.style(' ----> ERROR', fg='red'))
             fail = True
     help_src = cfg.get('help', 'dir')
-    help_target = os.path.join(get_plugin_directory(),
-                               cfg.get('plugin', 'name'),
+    help_target = os.path.join(plugin_dir,
                                cfg.get('help', 'target'))
     click.secho("Copying {0} to {1}".format(help_src, help_target),
                 fg='magenta',
@@ -482,23 +486,19 @@ def list(config):
     '--name',
     default='pb_tool.cfg',
     help='Name of the config file to create if other than pb_tool.cfg')
-def create(name):
+@click.option(
+    '--package',
+    default=None,
+    help='Name of package (lower case). This will be used as the directory name for deployment')
+def config(name, package):
     """
     Create a config file based on source files in the current directory
     """
     template = Template(config_template())
-    # guess the plugin name
-    try:
-        metadata = ConfigParser.ConfigParser()
-        metadata.read('metadata.txt')
-        cfg_name = metadata.get('general', 'name')
-    except ConfigParser.NoOptionError as oops:
-        print oops.message
-    except ConfigParser.NoSectionError as secoops:
-        print secoops.message
-        #print "Missing section '{}' when looking for option '{}'".format(
-        print "Unable to get the name of your plugin from metadata.txt"
-        cfg_name = click.prompt("Name of the plugin:")
+
+    # get the plugin package name
+    if not package:
+        cfg_name = click.prompt('Name of package (lower case). This will be used as the directory name for deployment')
 
     # get the list of python files
     py_files = glob.glob('*.py')
@@ -720,6 +720,11 @@ def config_template():
 # Name of the plugin. This is the name of the directory that will
 # be created in .qgis2/python/plugins
 name: $Name
+
+# Full path to where you want your plugin directory copied. If empty,
+# the QGIS default path will be used. Don't include the plugin name in
+# the path.
+plugin_path:
 
 [files]
 # Python  files that should be deployed with the plugin

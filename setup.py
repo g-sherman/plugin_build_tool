@@ -18,7 +18,7 @@
  ***************************************************************************/
 """
 
-from setuptools import setup
+from setuptools import *
 
 setup(
     name='pb_tool',
@@ -51,6 +51,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        pb_tool=pb_tool:cli
+        pb_tool=pb_tool.pb_tool:cli
     ''',
 )
