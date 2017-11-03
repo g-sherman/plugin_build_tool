@@ -1,2 +1,11 @@
-include basic.tmpl
-include dialog.tmpl
+include templates/basic.tmpl
+include templates/dialog.tmpl
+include templates/pb_tool.tmpl
+include templates/icon.png
+include templates/dialog/__init__.tmpl
+include templates/dialog/module_name.tmpl
+include templates/dialog/module_name_dialog.tmpl
+include templates/dialog/module_name_dialog_base.ui.tmpl
+include templates/dialog/readme.tmpl
+include templates/dialog/resources.tmpl
+include templates/dialog/results.tmpl

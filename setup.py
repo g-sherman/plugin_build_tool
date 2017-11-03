@@ -18,7 +18,7 @@
  ***************************************************************************/
 """
 
-from setuptools import setup
+from setuptools import *
 
 setup(
     name='pb_tool',
@@ -40,9 +40,10 @@ setup(
         'Topic :: Scientific/Engineering :: GIS'],
     keywords='QGIS PyQGIS',
     platforms=['Linux', 'Windows', 'OS X'],
+    packages=find_packages(),
+    package_data = {'pb_tool': ['templates/*.tmpl', 'templates/icon.png', 'templates/dialog/*.*']},
     include_package_data=True,
-    package_data = {'': ['templates/basic.tmpl'],},
-    py_modules=['pb_tool', 'template_basic'],
+    py_modules=['pb_tool'],
     install_requires=[
         'Click', 
         'Sphinx',
@@ -50,6 +51,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        pb_tool=pb_tool:cli
+        pb_tool=pb_tool.pb_tool:cli
     ''',
 )

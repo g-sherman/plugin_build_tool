@@ -26,9 +26,12 @@ import shutil
 import errno
 import glob
 import urllib.request
+import urllib.error
 import configparser
 from string import Template
 from distutils.dir_util import copy_tree
+import pkgutil
+import webbrowser
 
 from template_basic import *
 import click
@@ -96,6 +99,9 @@ def version():
 @click.option('--config',
               default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
+@click.option('--plugin_path', '-p',
+              default=None,
+              help='Specify the directory where to deploy your plugin if not using the standard location')
 @click.option('--quick', '-q',
               is_flag=True,
               help='Do a quick install without compiling ui, resource, docs, \
@@ -103,12 +109,12 @@ def version():
 @click.option('--no-confirm', '-y',
               is_flag=True,
               help='Don\'t ask for confirmation to overwrite existing files')
-def deploy(config, quick, no_confirm):
+def deploy(config, plugin_path, quick, no_confirm):
     """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
-    deploy_files(config, quick=quick, confirm=not no_confirm)
+    deploy_files(config, plugin_path, quick=quick, confirm=not no_confirm)
 
 
-def deploy_files(config, confirm=True, quick=False):
+def deploy_files(config, plugin_path, confirm=True, quick=False):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
     if not os.path.exists(config):
@@ -116,8 +122,15 @@ def deploy_files(config, confirm=True, quick=False):
                     fg='red')
     else:
         cfg = get_config(config)
-        plugin_dir = os.path.join(get_plugin_directory(), cfg.get('plugin',
-                                                                  'name'))
+        if not plugin_path:
+            plugin_path = get_plugin_directory(config)
+            if not plugin_path:
+                click.secho("Unable to determine where to deploy your plugin", fg='red')
+                return
+
+        plugin_dir = os.path.join(plugin_path, cfg.get('plugin', 'name'))
+
+        click.secho("Deploying to {}".format(plugin_dir), fg='green')
         if quick:
             click.secho("Doing quick deployment", fg='green')
             install_files(plugin_dir, cfg)
@@ -132,8 +145,8 @@ def deploy_files(config, confirm=True, quick=False):
                 * Remove your currently deployed version
                 * Compile the ui and resource files
                 * Build the help docs
-                * Copy everything to your .qgis2/python/plugins directory
-                """)
+                * Copy everything to your {} directory
+                """.format(plugin_dir))
 
                 proceed = click.confirm("Proceed?")
             else:
@@ -184,7 +197,7 @@ def install_files(plugin_dir, cfg):
             click.echo(click.style(' ----> ERROR', fg='red'))
             fail = True
     help_src = cfg.get('help', 'dir')
-    help_target = os.path.join(get_plugin_directory(),
+    help_target = os.path.join(plugin_dir,
                                cfg.get('plugin', 'name'),
                                cfg.get('help', 'target'))
     click.secho("Copying {0} to {1}".format(help_src, help_target),
@@ -486,6 +499,17 @@ def validate(config):
         click.secho('Check your path or install a zip program', fg='red')
     else:
         click.secho('Found suitable zip utility: {}'.format(zip_utility), fg='green')
+    # check for templates
+    print(__file__)
+    print("Module: {}".format (sys.modules['pb_tool']))
+    basic_tmpl = pkgutil.get_data('pb_tool', 'templates/basic.tmpl')
+    print("Read basic template: {}".format(str(basic_tmpl, 'utf-8')))
+
+    #f = open('pb_tool/templates/basic.tmpl')
+    #if f:
+    #    print("opened basic.tmpl")
+    #else:
+    #    print("unable to find basic.tmpl")
 
 
 
@@ -506,28 +530,43 @@ def list(config):
         click.secho("We can't do anything without it", fg='red')
 
 
+
+@cli.command()
+@click.option(
+    '--modulename',
+    prompt=True,
+    help='Name of the module for the new plugin. Lower case with underscores, e.g: my_plugin')
+@click.option(
+    '--classname',
+    prompt=True,
+    help='Class name for the new plugin. CamelCase, no underscores, e.g: MyPlugin')
+@click.option(
+    '--menutext',
+    prompt=True,
+    help='Text for the menu.')
+def create(modulename, classname, menutext):
+    """ Create a new plugin in the current directory using either the basic or dialog template. """
+    # print("Creating {} in module {} with menu text {}".format(classname, modulename, menutext))
+    print("This feature is not implemented yet")
+
 @cli.command()
 @click.option(
     '--name',
     default='pb_tool.cfg',
     help='Name of the config file to create if other than pb_tool.cfg')
-def create(name):
+@click.option(
+    '--package',
+    default=None,
+    help='Name of package (lower case). This will be used as the directory name for deployment')
+def config(name, package):
     """
     Create a config file based on source files in the current directory
     """
     template = Template(config_template())
-    # guess the plugin name
-    try:
-        metadata = configparser.ConfigParser()
-        metadata.read('metadata.txt')
-        cfg_name = metadata.get('general', 'name')
-    except configparser.NoOptionError as oops:
-        print(oops.message)
-    except configparser.NoSectionError as secoops:
-        print(secoops.message)
-        #print "Missing section '{}' when looking for option '{}'".format(
-        print("Unable to get the name of your plugin from metadata.txt")
-        cfg_name = click.prompt("Name of the plugin:")
+    # get the plugin package name
+    
+    if not package:
+      cfg_name = click.prompt('Name of package (lower case). This will be used as the directory name for deployment')
 
     # get the list of python files
     py_files = glob.glob('*.py')
@@ -579,8 +618,8 @@ def create(name):
 def update():
     """ Check for update to pb_tool """
     try:
-        u = urllib.urlopen('http://geoapt.net/pb_tool/current_version.txt')
-        version = u.read()[:-1]
+        u = urllib.request.urlopen('http://geoapt.net/pb_tool/current3_version.txt')
+        version = str(u.read()[:-1], 'utf-8')
         click.secho("Latest version is %s" % version, fg='green')
         if version == __version():
             click.secho("Your version is up to date", fg='green')
@@ -590,9 +629,15 @@ def update():
             cmd = 'pip install --upgrade pb_tool'
             print("   %s" % cmd)
 
-    except urllib.URLError as uoops:
+    except urllib.error.URLError as uoops:
         click.secho("Unable to check for update.")
         click.secho("%s" % uoops.reason)
+
+
+@cli.command()
+def help():
+    "Open the pb_tools web page in your default browser"
+    webbrowser.open_new('http://g-sherman.github.io/plugin_build_tool')
 
 
 def check_cfg(cfg, section, name):
@@ -728,19 +773,25 @@ def copy(source, destination):
             print('Directory not copied. Error: %s' % e)
 
 
-def get_plugin_directory():
-    try:
-        from PyQt5.QtCore import QStandardPaths, QDir
-        path = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
-        plugin_path = os.path.join(QDir.homePath(), path, 'QGIS/QGIS3/profiles/default/python/plugins')
-        click.secho("Plugin path: {}".format(plugin_path), fg='green')
-    except:
-        click.secho("""Unable to determine location of your QGIS Plugin directory.
-        Make sure your QGIS environment is setup properly for development and Python
-        has access to the PyQt4.QtCore module.""", fg='red')
-        plugin_path = None
+def get_plugin_directory(config='pb_tool.cfg'):
+    """ Get the plugin directory, first checking to see if it's configured in pb_tool.cfg"""
+    plugin_dir = get_config(config).get('plugin', 'plugin_path', fallback=None)
 
-    return plugin_path
+    if plugin_dir:
+        click.secho("Using plugin directory from pb_tool.cfg", fg='green')
+    else:
+        try:
+            from PyQt5.QtCore import QStandardPaths, QDir
+            path = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
+            plugin_dir = os.path.join(QDir.homePath(), path, 'QGIS/QGIS3/profiles/default/python/plugins')
+            # click.secho("Plugin path: {}".format(plugin_path), fg='green')
+        except:
+            click.secho("""Unable to determine location of your QGIS Plugin directory.
+            Make sure your QGIS environment is setup properly for development and Python
+            has access to the PyQt5.QtCore module or specify plugin_path in your pb_tool.cfg.""", fg='red')
+            plugin_dir = None
+
+    return plugin_dir
 
 
 def config_template():
@@ -756,8 +807,13 @@ def config_template():
 
 [plugin]
 # Name of the plugin. This is the name of the directory that will
-# be created in .qgis2/python/plugins
+# be created when deployed
 name: $Name
+
+# Full path to where you want your plugin directory copied. If empty,
+# the QGIS default path will be used. Don't include the plugin name in
+# the path.
+plugin_path:
 
 [files]
 # Python  files that should be deployed with the plugin
