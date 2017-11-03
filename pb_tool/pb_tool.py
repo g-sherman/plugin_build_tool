@@ -33,7 +33,6 @@ from distutils.dir_util import copy_tree
 import pkgutil
 import webbrowser
 
-from template_basic import *
 import click
 
 
@@ -75,7 +74,7 @@ def cli():
 def __version():
     """ return the current version """
     # TODO update this with each release
-    return "1.9"
+    return "3.0.3"
 
 
 def get_install_files(cfg):
@@ -92,7 +91,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("3.0.0, 2017-10-29")
+    click.echo("3.0.3, 2017-11-03")
 
 
 @cli.command()
@@ -198,7 +197,6 @@ def install_files(plugin_dir, cfg):
             fail = True
     help_src = cfg.get('help', 'dir')
     help_target = os.path.join(plugin_dir,
-                               cfg.get('plugin', 'name'),
                                cfg.get('help', 'target'))
     click.secho("Copying {0} to {1}".format(help_src, help_target),
                 fg='magenta',
@@ -566,7 +564,7 @@ def config(name, package):
     # get the plugin package name
     
     if not package:
-      cfg_name = click.prompt('Name of package (lower case). This will be used as the directory name for deployment')
+        cfg_name = click.prompt('Name of package (lower case). This will be used as the directory name for deployment')
 
     # get the list of python files
     py_files = glob.glob('*.py')
