@@ -69,9 +69,9 @@ def cli():
 
 
 def __version():
-    """ return the current version """
+    """ return the current version and date """
     # TODO update this with each release
-    return "2.0.0"
+    return ("2.0.1", "2017-11-05")
 
 
 def get_install_files(cfg):
@@ -88,7 +88,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("2.0.0, 2017-11-03")
+    click.echo("{} {}".format(__version()[0], __version()[1]))
 
 
 @cli.command()
@@ -385,10 +385,10 @@ def zip(config, quick):
 
     name = get_config(config).get('plugin', 'name', None)
     if not quick:
-        proceed = click.confirm('Do a dclean and deploy first?')
+        proceed = click.confirm('This requires a dclean and deploy first. Proceed?')
         if proceed:
             #clean_deployment(False, config)
-            deploy_files(config, confirm=False)
+            deploy_files(config, plugin_path=None, confirm=False)
     else:
         # Check to see if the plugin directory exists, otherwise we can't
         # do a quick zip
@@ -399,8 +399,8 @@ def zip(config, quick):
             # proceed = click.confirm(
             #     'Do you want to deploy and proceed with packaging?')
             # if proceed:
-            deploy_files(config, confirm=False)
-            proceed = True
+            deploy_files(config, plugin_path=None, confirm=False)
+        proceed = True
 
     #confirm = click.confirm(
     #    'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
@@ -494,6 +494,12 @@ def config(name, package):
     """
     Create a config file based on source files in the current directory
     """
+    click.secho("Create a config file based on source files in the current directory", fg="green")
+    if name == 'pb_tool.cfg':
+        click.secho("This will overwrite any existing pb_tool.cfg in the current directory", fg="red")
+        proceed = click.confirm('Proceed?')
+        if not proceed:
+            return
     template = Template(config_template())
 
     # get the plugin package name
@@ -553,13 +559,19 @@ def update():
         u = urllib2.urlopen('http://geoapt.net/pb_tool/current_version.txt')
         version = u.read()[:-1]
         click.secho("Latest version is %s" % version, fg='green')
-        if version == __version():
+        # convert version numbers to int
+        this_version = int(__version()[0].replace('.', ''))
+        current_version = int(version.replace('.',''))
+                           
+        if this_version == current_version:
             click.secho("Your version is up to date", fg='green')
-        else:
-            click.secho("You have Version %s" % __version(), fg='green')
+        elif current_version > this_version:
+            click.secho("You have Version %s" % __version()[0], fg='green')
             click.secho("You can upgrade by running this command:")
             cmd = 'pip install --upgrade pb_tool'
             print "   %s" % cmd
+        elif this_version > current_version:
+            click.secho("You have development Version %s" % __version()[0], fg='green')
 
     except urllib2.URLError as uoops:
         click.secho("Unable to check for update.")
