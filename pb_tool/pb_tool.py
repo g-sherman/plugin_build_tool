@@ -72,9 +72,9 @@ def cli():
 
 
 def __version():
-    """ return the current version """
+    """ return the current version and date released """
     # TODO update this with each release
-    return "3.0.3"
+    return ("3.0.5", "2017-11-05")
 
 
 def get_install_files(cfg):
@@ -91,7 +91,7 @@ def get_install_files(cfg):
 @cli.command()
 def version():
     """Return the version of pb_tool and exit"""
-    click.echo("3.0.3, 2017-11-03")
+    click.echo("{}, {}".format(__version()[0], __version()[1]))
 
 
 @cli.command()
@@ -393,10 +393,10 @@ def zip(config, quick):
 
     name = get_config(config).get('plugin', 'name', fallback=None)
     if not quick:
-        proceed = click.confirm('Do a dclean and deploy first?')
+        proceed = click.confirm('This requires a dclean and deploy first. Proceed?')
         if proceed:
             #clean_deployment(False, config)
-            deploy_files(config, confirm=False)
+            deploy_files(config, plugin_path=None, confirm=False)
     else:
         # Check to see if the plugin directory exists, otherwise we can't
         # do a quick zip
@@ -407,8 +407,8 @@ def zip(config, quick):
             # proceed = click.confirm(
             #     'Do you want to deploy and proceed with packaging?')
             # if proceed:
-            deploy_files(config, confirm=False)
-            proceed = True
+            deploy_files(config, plugin_path=None, confirm=False)
+        proceed = True
 
     #confirm = click.confirm(
     #    'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
@@ -497,11 +497,11 @@ def validate(config):
         click.secho('Check your path or install a zip program', fg='red')
     else:
         click.secho('Found suitable zip utility: {}'.format(zip_utility), fg='green')
-    # check for templates
-    print(__file__)
-    print("Module: {}".format (sys.modules['pb_tool']))
-    basic_tmpl = pkgutil.get_data('pb_tool', 'templates/basic.tmpl')
-    print("Read basic template: {}".format(str(basic_tmpl, 'utf-8')))
+    # check for templates - uncomment next 4 after create function is done
+    #print(__file__)
+    #print("Module: {}".format (sys.modules['pb_tool']))
+    #basic_tmpl = pkgutil.get_data('pb_tool', 'templates/basic.tmpl')
+    #print("Read basic template: {}".format(str(basic_tmpl, 'utf-8')))
 
     #f = open('pb_tool/templates/basic.tmpl')
     #if f:
@@ -530,19 +530,19 @@ def list(config):
 
 
 @cli.command()
-@click.option(
-    '--modulename',
-    prompt=True,
-    help='Name of the module for the new plugin. Lower case with underscores, e.g: my_plugin')
-@click.option(
-    '--classname',
-    prompt=True,
-    help='Class name for the new plugin. CamelCase, no underscores, e.g: MyPlugin')
-@click.option(
-    '--menutext',
-    prompt=True,
-    help='Text for the menu.')
-def create(modulename, classname, menutext):
+# @click.option(
+#     '--modulename',
+#     prompt=True,
+#     help='Name of the module for the new plugin. Lower case with underscores, e.g: my_plugin')
+# @click.option(
+#     '--classname',
+#     prompt=True,
+#     help='Class name for the new plugin. CamelCase, no underscores, e.g: MyPlugin')
+# @click.option(
+#     '--menutext',
+#     prompt=True,
+#     help='Text for the menu.')
+def create(modulename=None, classname=None, menutext=None):
     """ Create a new plugin in the current directory using either the basic or dialog template. """
     # print("Creating {} in module {} with menu text {}".format(classname, modulename, menutext))
     print("This feature is not implemented yet")
@@ -560,6 +560,12 @@ def config(name, package):
     """
     Create a config file based on source files in the current directory
     """
+    click.secho("Create a config file based on source files in the current directory", fg="green")
+    if name == 'pb_tool.cfg':
+        click.secho("This will overwrite any existing pb_tool.cfg in the current directory", fg="red")
+        proceed = click.confirm('Proceed?')
+        if not proceed:
+            return
     template = Template(config_template())
     # get the plugin package name
     
@@ -619,10 +625,10 @@ def update():
         u = urllib.request.urlopen('http://geoapt.net/pb_tool/current3_version.txt')
         version = str(u.read()[:-1], 'utf-8')
         click.secho("Latest version is %s" % version, fg='green')
-        if version == __version():
+        if version == __version()[0]:
             click.secho("Your version is up to date", fg='green')
         else:
-            click.secho("You have Version %s" % __version(), fg='green')
+            click.secho("You have Version %s" % __version()[0], fg='green')
             click.secho("You can upgrade by running this command:")
             cmd = 'pip install --upgrade pb_tool'
             print("   %s" % cmd)
