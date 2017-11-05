@@ -74,7 +74,7 @@ def cli():
 def __version():
     """ return the current version and date released """
     # TODO update this with each release
-    return ("3.0.5", "2017-11-05")
+    return ("3.0.6", "2017-11-05")
 
 
 def get_install_files(cfg):
@@ -625,13 +625,18 @@ def update():
         u = urllib.request.urlopen('http://geoapt.net/pb_tool/current3_version.txt')
         version = str(u.read()[:-1], 'utf-8')
         click.secho("Latest version is %s" % version, fg='green')
-        if version == __version()[0]:
+        this_version = int(__version()[0].replace('.',''))
+        current_version = int(version.replace('.',''))
+
+        if this_version == current_version:
             click.secho("Your version is up to date", fg='green')
-        else:
+        elif current_version > this_version:
             click.secho("You have Version %s" % __version()[0], fg='green')
             click.secho("You can upgrade by running this command:")
             cmd = 'pip install --upgrade pb_tool'
             print("   %s" % cmd)
+        elif this_version > current_version:
+            click.secho("You have development version {}".format(__version()[0]), fg='green')
 
     except urllib.error.URLError as uoops:
         click.secho("Unable to check for update.")
