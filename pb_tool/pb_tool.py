@@ -571,6 +571,8 @@ def config(name, package):
     
     if not package:
         cfg_name = click.prompt('Name of package (lower case). This will be used as the directory name for deployment')
+    else:
+        cfg_name = name
 
     # get the list of python files
     py_files = glob.glob('*.py')
