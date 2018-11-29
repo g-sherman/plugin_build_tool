@@ -21,15 +21,25 @@ a QGIS Python Plugin:
 ## Installation
 You can install the tool using pip:
 
-    pip install pb_tool
+    python -m pip install pb_tool
 
 To upgrade to the latest version, use:
 
-    pip install --upgrade pb_tool
+    python -m pip install --upgrade pb_tool
 
 You can also install using easy_install:
 
     easy_install pb_tool
+
+## Troubleshooting
+
+If you get an error about Pygments:
+    *Cannot uninstall 'Pygments'. It is a distutils installed project and thus we cannot accurately determine which files belong to it which would lead to only a partial uninstall."*
+
+Try installing using:
+
+    python -m pip install --ignore-installed Pygments pb_tool
+
 
 For information on getting setup to develop on Windows, see:
 [A Quick Guide to Getting Started with PyQGIS on Windows](http://spatialgalaxy.net/2014/10/09/a-quick-guide-to-getting-started-with-pyqgis-on-windows/)
