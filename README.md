@@ -159,17 +159,20 @@ Here is the help for a few of the commands, as reported using the --help option:
 suggests doing a `dclean` and `deploy` first.
 
 ### Creating a Config File for an Existing Project
+
 You can create a config file for an existing plugin project by changing to the
 directory containing the plugin source and using `pb_tool create`:
 
-    $ pb_tool create --help
-    Usage: pb_tool create [OPTIONS]
+```shell
+$ pb_tool config --help
+Usage: pb_tool config [OPTIONS]
 
-      Create a config file based on source files in the current directory
+  Create a config file based on source files in the current directory
 
-    Options:
-      --name TEXT  Name of the config file to create if other than pb_tool.cfg
-      --help       Show this message and exit.
+Options:
+  --name TEXT  Name of the config file to create if other than pb_tool.cfg
+  --help       Show this message and exit.
+```
 
 Once the config file is created you can try `deploy` to see if it
 picked up everything needed for your plugin---or open it in your
