@@ -52,5 +52,6 @@ setup(
     entry_points='''
         [console_scripts]
         pb_tool=pb_tool.pb_tool:cli
+        pbt=pb_tool.pb_tool:cli
     ''',
 )
