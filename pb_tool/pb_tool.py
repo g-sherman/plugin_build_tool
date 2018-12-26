@@ -57,6 +57,9 @@ def cli():
     For help on a command use --help after the command:
     pb_tool deploy --help.
 
+    You can invoke the tool using pbt as well:
+    pbt deploy --help
+
     pb_tool requires a configuration file (default: pb_tool.cfg) that
     declares the files and resources used in your plugin. Plugin Builder
     2.6.0 creates a config file when you generate a new plugin template.
