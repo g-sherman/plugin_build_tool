@@ -22,7 +22,7 @@ from setuptools import *
 
 setup(
     name='pb_tool',
-    version='2.0.1',
+    version='2.0.2',
     description='A tool to aid in QGIS Python plugin development',
     long_description='pb_tool provides commands to deploy and publish a QGIS Python plugin.',
     url='http://g-sherman.github.io/plugin_build_tool',
@@ -52,5 +52,6 @@ setup(
     entry_points='''
         [console_scripts]
         pb_tool=pb_tool.pb_tool:cli
+        pbt=pb_tool.pb_tool:cli
     ''',
 )

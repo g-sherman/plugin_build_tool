@@ -71,7 +71,7 @@ def cli():
 def __version():
     """ return the current version and date """
     # TODO update this with each release
-    return ("2.0.1", "2017-11-05")
+    return ("2.0.2", "2018-12-26")
 
 
 def get_install_files(cfg):
@@ -119,7 +119,7 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False):
     else:
         cfg = get_config(config_file)
         if not plugin_path:
-            plugin_path = get_plugin_directory(config_file)
+            plugin_path = get_plugin_directory()
             if not plugin_path:
                 click.secho("Unable to determine where to deploy your plugin", fg='red')
                 return
