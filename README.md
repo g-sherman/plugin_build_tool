@@ -15,6 +15,7 @@ a QGIS Python Plugin:
 * Create a zip file for upload to a repository
 * Clean both compiled and deployed files
 * Build and clean documentation
+* Create plugin skeletons (minimal and dialog based)
 * Build translation files
 * Works on Windows, OS X, and Linux
 
