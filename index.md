@@ -1,7 +1,6 @@
 Plugin Build Tool - pb_tool
 ============================
-[http://g-sherman.github.io/plugin_build_tool]
-(http://g-sherman.github.io/plugin_build_tool)
+[http://g-sherman.github.io/plugin_build_tool](http://g-sherman.github.io/plugin_build_tool)
 
 Python command line tool for compiling and deploying QGIS plugins on all OS platforms.
 
