@@ -78,7 +78,7 @@ def cli():
 def __version():
     """ return the current version and date released """
     # TODO update this with each release
-    return ("3.0.7", "2018-12-26")
+    return ("3.0.8", "2019-11-19")
 
 
 def get_install_files(cfg):
@@ -289,7 +289,7 @@ def clean_docs():
               default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
 def dclean(config):
-    """ Remove the deployed plugin from the .qgis2/python/plugins directory
+    """ Remove the deployed plugin from the deployment directory
     """
     clean_deployment(True, config)
 
@@ -454,20 +454,25 @@ def validate(config_file):
     Detect the plugin install path and presence of a suitable zip utilty.
     """
     valid = True
+    messages = []
     cfg = get_config(config_file)
     if not check_cfg(cfg, 'plugin', 'name'):
+        messages.append("Missing plugin name")
         valid = False
     if not check_cfg(cfg, 'files', 'python_files'):
-        valid = False
-    if not check_cfg(cfg, 'files', 'main_dialog'):
+        messages.append("Missing python_files section")
         valid = False
     if not check_cfg(cfg, 'files', 'resource_files'):
+        messages.append("Missing files resource_files")
         valid = False
     if not check_cfg(cfg, 'files', 'extras'):
+        messages.append("Missing files extras")
         valid = False
     if not check_cfg(cfg, 'help', 'dir'):
+        messages.append("Missing help dir ")
         valid = False
     if not check_cfg(cfg, 'help', 'target'):
+        messages.append("Missing help target ")
         valid = False
 
     click.secho("Using Python {}".format(sys.version), fg='green')
@@ -477,7 +482,10 @@ def validate(config_file):
                 config_file),
             fg='green')
     else:
-        click.secho("Your {0} file is invalid".format(config_file), fg='red')
+        click.secho("Your {0} file may be invalid, but still functional.".format(config_file), fg='yellow')
+        click.secho("Possible errors:", fg="yellow")
+        for message in messages:
+            click.secho("    {}".format(message), fg="yellow")
     try:
         from qgis.PyQt.QtCore import QStandardPaths, QDir
         path = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
@@ -557,26 +565,33 @@ def minimal():
 @cli.command()
 @click.option(
     '--modulename',
-    prompt=True,
+    prompt=False,
     help='Name of the module for the new plugin. Lower case with underscores, e.g: my_plugin')
 @click.option(
     '--classname',
-    prompt=True,
+    prompt=False,
     help='Class name for the new plugin. CamelCase, no underscores, e.g: MyPlugin')
 @click.option(
     '--menutext',
-    prompt=True,
+    prompt=False,
     help='Text for the menu.')
 
 def create(modulename=None, classname=None, menutext=None):
-    """ Create a new dialog based plugin in the current directory"""
-    click.secho("Creating {} in module {} with menu text {}".format(classname, modulename, menutext), fg="green")
+    """ Create a new dialog-based plugin in the current directory"""
     proceed = True
     if not is_empty(os.getcwd()):
         proceed = click.confirm("There are already files in this directory that may be overwritten. Proceed?")
     if not proceed:
         click.secho("To be safe, create the plugin in an empty directory.", fg="green")
         return
+    # get the inputs if not specified
+    if not modulename:
+        modulename = click.prompt('Module name (lowercase)')
+    if not classname:
+        classname = click.prompt('Class name: (mixed case)')
+    if not menutext:
+        menutext = click.prompt('Text for the plugin menu')
+    click.secho("Creating {} in module {} with menu text {}".format(classname, modulename, menutext), fg="green")
 
     # read the templates and process
     # process the init module
@@ -743,12 +758,12 @@ def create(modulename=None, classname=None, menutext=None):
     default=None,
     help='Name of package (lower case). This will be used as the directory name for deployment')
 
-def config(config_filename, package):
+def config(name, package):
     """
     Create a config file based on source files in the current directory
     """
     click.secho("Create a config file based on source files in the current directory", fg="green")
-    if config_filename == 'pb_tool.cfg':
+    if name == 'pb_tool.cfg':
         click.secho("This will overwrite any existing pb_tool.cfg in the current directory", fg="red")
         proceed = click.confirm('Proceed?')
         if not proceed:
@@ -760,7 +775,7 @@ def config(config_filename, package):
     else:
         package_name = package
 
-    create_config(config_filename, package_name)
+    create_config(name, package_name)
 
 
 def create_config(config_filename, package):
@@ -1119,4 +1134,6 @@ def fetch_template(template_name):
 
 def is_empty(path):
     files = os.listdir(path)
+    if len(files) > 0:
+        print("{} is not empty".format(path))
     return len(files) == 0
