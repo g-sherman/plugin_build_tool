@@ -335,7 +335,7 @@ For information, see [https://github.com/wonder-sk/qgis-minimal-plugin](https://
 
 ### Dialog-based plugin
 
-The dialog-based plugin generates a lot more boilerplage, including both the main module and dialog files. You can generate the plugin by specifying all the switches on the command line:
+The dialog-based plugin generates a lot more boilerplate, including both the main module and dialog files. You can generate the plugin by specifying all the switches on the command line:
 
     pbt create --modulename my_plugin --classname MyPlugin --menutext "My Plugin"
 
@@ -348,6 +348,8 @@ or by interactively entering them:
     Creating MyPlugin in module my_plugin with menu text My Plugin
     Using /home/gsherman/.gitconfig to set some items in the plugin
     Created new config file in pb_tool.cfg
+
+When you run the plugin in QGIS an empty dialog pops up. You can then customize with controls using Qt Designer and add code to implement your features.
 
 ## What's Missing
 
