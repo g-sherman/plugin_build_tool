@@ -13,6 +13,7 @@ a QGIS Python Plugin:
 * Create a zip file for upload to a repository
 * Clean both compiled and deployed files
 * Build and clean documentation
+* Generate plugin skeletons (minimal and dialog)
 
 ##Installation
 You can install the tool using pip:
