@@ -28,6 +28,7 @@ import glob
 import urllib.request
 import urllib.error
 import configparser
+import pathlib
 from string import Template
 from distutils.dir_util import copy_tree
 from datetime import datetime
@@ -598,6 +599,25 @@ def create(modulename=None, classname=None, menutext=None):
     if not menutext:
         menutext = click.prompt('Text for the plugin menu')
     click.secho("Creating {} in module {} with menu text {}".format(classname, modulename, menutext), fg="green")
+    author = 'author'
+    email = 'email address'
+    # check to see if we have either a .pbtconfig or .gitconfig file in the home dir
+    if os.path.exists(os.path.join(pathlib.Path.home(), '.pbtconfig')):
+        config_path = os.path.join(pathlib.Path.home(), '.pbtconfig')
+    elif os.path.exists(os.path.join(pathlib.Path.home(), '.gitconfig')):
+        config_path = os.path.join(pathlib.Path.home(), '.gitconfig')
+    else:
+        config_path = None
+    if config_path:
+        click.secho("Using {} to set some items in the plugin".format(config_path))
+        pbtconfig = configparser.ConfigParser()
+        if pbtconfig.read(config_path):
+
+            if 'user' in pbtconfig.sections():
+                user_section = pbtconfig['user']
+                author = user_section.get('name', 'author')
+                email = user_section.get('email', 'email address')
+                #print("author is {} and email is {}".format(author, email))
 
     # read the templates and process
     # process the init module
@@ -605,8 +625,8 @@ def create(modulename=None, classname=None, menutext=None):
     result = tmpl.substitute(TemplateModuleName=modulename,
                              TemplateClass=classname,
                              TemplateYear=dt.year,
-                             TemplateAuthor='author',
-                             TemplateEmail="email address")
+                             TemplateAuthor=author,
+                             TemplateEmail=email)
 
     # write the init module
     f = open("__init__.py", 'w')
@@ -620,8 +640,8 @@ def create(modulename=None, classname=None, menutext=None):
                              TemplateTitle=menutext,
                              TemplateMenuText=menutext,
                              TemplateYear=dt.year,
-                             TemplateAuthor='author',
-                             TemplateEmail="email address")
+                             TemplateAuthor=author,
+                             TemplateEmail=email)
     # write the module
     f = open("{}.py".format(modulename), 'w')
     f.write(result)
@@ -632,8 +652,8 @@ def create(modulename=None, classname=None, menutext=None):
     result = tmpl.substitute(TemplateModuleName=modulename,
                              TemplateClass=classname,
                              TemplateYear=dt.year,
-                             TemplateAuthor='author',
-                             TemplateEmail="email address")
+                             TemplateAuthor=author,
+                             TemplateEmail=email)
 
     # write the module
     f = open("{}_dialog.py".format(modulename), 'w')
@@ -705,9 +725,9 @@ def create(modulename=None, classname=None, menutext=None):
     metadata_file.write(
         'version=%s\n' % '0.1')
     metadata_file.write(
-        'author=%s\n' % os.environ['USER'])
+        'author=%s\n' % author)
     metadata_file.write(
-        '# Enter your email here\nemail=%s@somewhere.com\n\n' % os.environ['USER'])
+        '#email=%s\n\n' % email)
     metadata_file.write(
         'about=%s\n\n' % 'Enter more info about your plugin here')
     metadata_file.write(
