@@ -41,7 +41,7 @@ For information on getting setup to develop on Windows, see:
 *pb_tool* assumes a file name of pb_tool.cfg, although you can specify a
 different one using the ``--config`` options in most commands.
 
-To display the available commands, just enter `pb_tool` on the command line:
+To display the available commands, just enter `pb_tool` or `pbt` on the command line:
 
 
     $ pb_tool
