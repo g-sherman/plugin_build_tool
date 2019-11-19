@@ -18,11 +18,11 @@
  ***************************************************************************/
 """
 
-from setuptools import *
+from setuptools import setup, find_packages
 
 setup(
     name='pb_tool',
-    version='3.0.6',
+    version='3.0.7',
     description='Plugin build tool for QGIS: A tool to aid in QGIS Python plugin development',
     long_description='pb_tool provides commands to deploy and publish a QGIS Python plugin.',
     url='http://g-sherman.github.io/plugin_build_tool',
@@ -41,11 +41,12 @@ setup(
     keywords='QGIS PyQGIS',
     platforms=['Linux', 'Windows', 'OS X'],
     packages=find_packages(),
-    package_data = {'pb_tool': ['templates/*.tmpl', 'templates/icon.png', 'templates/dialog/*.*']},
+    package_data={'pb_tool': ['templates/*.tmpl', 'templates/icon.png',
+                              'templates/dialog/*.*', 'templates/minimal/*.*']},
     include_package_data=True,
     py_modules=['pb_tool'],
     install_requires=[
-        'Click', 
+        'Click',
         'Sphinx',
         'colorama'
     ],

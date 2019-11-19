@@ -3,10 +3,7 @@
 /***************************************************************************
  $TemplateClass
                                  A QGIS plugin
- $TemplateDescription
                               -------------------
-        begin                : $TemplateBuildDate
-        git sha              : $TemplateVCSFormat
         copyright            : (C) $TemplateYear by $TemplateAuthor
         email                : $TemplateEmail
  ***************************************************************************/
@@ -20,9 +17,9 @@
  *                                                                         *
  ***************************************************************************/
 """
-from PyQt5.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction
+from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -151,7 +148,9 @@ class ${TemplateClass}:
             self.toolbar.addAction(action)
 
         if add_to_menu:
-            self.iface.${TemplateMenuAddMethod}(
+            # Customize the iface method if you want to add to a specific
+            # menu (for example iface.addToVectorMenu):
+            self.iface.addPluginToMenu(
                 self.menu,
                 action)
 
@@ -173,7 +172,7 @@ class ${TemplateClass}:
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
-            self.iface.${TemplateMenuRemoveMethod}(
+            self.iface.removePluginMenu(
                 self.tr(u'&${TemplateTitle}'),
                 action)
             self.iface.removeToolBarIcon(action)

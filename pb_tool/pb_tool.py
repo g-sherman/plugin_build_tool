@@ -30,6 +30,7 @@ import urllib.error
 import configparser
 from string import Template
 from distutils.dir_util import copy_tree
+from datetime import datetime
 import pkgutil
 import webbrowser
 
@@ -77,7 +78,7 @@ def cli():
 def __version():
     """ return the current version and date released """
     # TODO update this with each release
-    return ("3.0.6", "2017-11-05")
+    return ("3.0.7", "2018-12-26")
 
 
 def get_install_files(cfg):
@@ -104,19 +105,21 @@ def version():
 @click.option('--plugin_path', '-p',
               default=None,
               help='Specify the directory where to deploy your plugin if not using the standard location')
+@click.option('--user-profile', '-u',
+              default=None,
+              help='Specify the QGIS user profile to use for deployment. Ignored if -p is set or plugin_path is specified in pb_tool.cfg')
 @click.option('--quick', '-q',
               is_flag=True,
-              help='Do a quick install without compiling ui, resource, docs, \
-              and translation files')
+              help='Do a quick install without compiling ui, resource, docs, and translation files')
 @click.option('--no-confirm', '-y',
               is_flag=True,
               help='Don\'t ask for confirmation to overwrite existing files')
-def deploy(config_file, plugin_path, quick, no_confirm):
+def deploy(config_file, plugin_path, user_profile, quick, no_confirm):
     """Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg"""
-    deploy_files(config_file, plugin_path, quick=quick, confirm=not no_confirm)
+    deploy_files(config_file, plugin_path, user_profile, quick=quick, confirm=not no_confirm)
 
 
-def deploy_files(config_file, plugin_path, confirm=True, quick=False):
+def deploy_files(config_file, plugin_path, user_profile, confirm=True, quick=False):
     """Deploy the plugin using parameters in pb_tool.cfg"""
     # check for the config file
     if not os.path.exists(config_file):
@@ -125,7 +128,7 @@ def deploy_files(config_file, plugin_path, confirm=True, quick=False):
     else:
         cfg = get_config(config_file)
         if not plugin_path:
-            plugin_path = get_plugin_directory(config_file)
+            plugin_path = get_plugin_directory(user_profile, config_file)
             if not plugin_path:
                 click.secho("Unable to determine where to deploy your plugin", fg='red')
                 return
@@ -185,6 +188,11 @@ def install_files(plugin_dir, cfg):
             click.echo(click.style(' ----> ERROR', fg='red'))
             fail = True
         extra_dirs = cfg.get('files', 'extra_dirs').split()
+        try:
+            exclude_files = cfg.get('files', 'exclude').split()
+        except:
+            # this isn't implemented so we ignore it for now
+            pass
         # print "EXTRA DIRS: {}".format(extra_dirs)
     for xdir in extra_dirs:
         click.secho("Copying contents of {0} to {1}".format(xdir, plugin_dir),
@@ -198,21 +206,26 @@ def install_files(plugin_dir, cfg):
                 "Error copying directory: {0}, {1}".format(xdir, oops.message))
             click.echo(click.style(' ----> ERROR', fg='red'))
             fail = True
-    help_src = cfg.get('help', 'dir')
-    help_target = os.path.join(plugin_dir,
-                               cfg.get('help', 'target'))
-    click.secho("Copying {0} to {1}".format(help_src, help_target),
-                fg='magenta',
-                nl=False)
-    # shutil.copytree(help_src, help_target)
     try:
-        copy_tree(help_src, help_target)
-        print("")
-    except Exception as oops:
-        errors.append("Error copying help files: {0}, {1}".format(
-            help_src, oops.message))
-        click.echo(click.style(' ----> ERROR', fg='red'))
-        fail = True
+        help_src = cfg.get('help', 'dir')
+        help_target = os.path.join(plugin_dir,
+                                cfg.get('help', 'target'))
+        # shutil.copytree(help_src, help_target)
+        try:
+            copy_tree(help_src, help_target)
+            click.secho("Copying {0} to {1}".format(help_src, help_target),
+                    fg='magenta',
+                    nl=False)
+            print("")
+        except Exception as oops:
+            errors.append("Error copying help files from: {0}. Skipping...".format(
+                help_src))
+            #click.echo(click.style(' ----> ERROR', fg='red'))
+            #fail = True
+    except:
+            click.secho("No help files configured---skipping...")
+
+    # If failure in deployment, print the errors
     if fail:
         print("\nERRORS:")
         for error in errors:
@@ -255,18 +268,20 @@ def clean_docs():
     """
     Remove the built HTML help files from the build directory
     """
-    if os.path.exists('help'):
-        click.echo('Removing built HTML from the help documentation')
-        if sys.platform == 'win32':
-            makeprg = 'make.bat'
+    proceed = click.confirm('Remove all built HTML help files from the help build directory specified in pb_tool.cfg?')
+    if proceed:
+        if os.path.exists('help'):
+            click.echo('Removing built HTML from the help documentation')
+            if sys.platform == 'win32':
+                makeprg = 'make.bat'
+            else:
+                makeprg = 'make'
+            cwd = os.getcwd()
+            os.chdir('help')
+            subprocess.check_call([makeprg, 'clean'])
+            os.chdir(cwd)
         else:
-            makeprg = 'make'
-        cwd = os.getcwd()
-        os.chdir('help')
-        subprocess.check_call([makeprg, 'clean'])
-        os.chdir(cwd)
-    else:
-        print("No help directory exists in the current directory")
+            print("No help directory exists in the current directory")
 
 
 @cli.command()
@@ -286,15 +301,17 @@ def dclean(config):
 def clean(config):
     """ Remove compiled resource and ui files
     """
-    cfg = get_config(config)
-    files = compiled_ui(cfg) + compiled_resource(cfg)
-    click.echo('Cleaning resource and ui files')
-    for file in files:
-        try:
-            os.unlink(file)
-            print("Deleted: {0}".format(file))
-        except OSError as oops:
-            print("Couldn't delete {0}: {1}".format(file, oops.strerror))
+    proceed = click.confirm('Remove all compiled resource and ui files from the project?')
+    if proceed:
+        cfg = get_config(config)
+        files = compiled_ui(cfg) + compiled_resource(cfg)
+        click.echo('Cleaning resource and ui files')
+        for file in files:
+            try:
+                os.unlink(file)
+                print("Deleted: {0}".format(file))
+            except OSError as oops:
+                print("Couldn't delete {0}: {1}".format(file, oops.strerror))
 
 
 @cli.command()
@@ -367,15 +384,11 @@ def translate(config):
 
 
 @cli.command()
-@click.option('--config',
+@click.option('--config_file',
               default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
-@click.option(
-    '--quick', '-q',
-    is_flag=True,
-    help='Do a quick packaging without dclean and deploy (plugin must have been previously deployed)'
-)
-def zip(config_file, quick):
+
+def zip(config_file):
     """ Package the plugin into a zip file
     suitable for uploading to the QGIS
     plugin repository"""
@@ -396,50 +409,39 @@ def zip(config_file, quick):
     click.secho('Found zip: %s' % zip, fg='green')
 
     name = get_config(config_file).get('plugin', 'name', fallback=None)
-    if not quick:
-        proceed = click.confirm('This requires a dclean and deploy first. Proceed?')
-        if proceed:
-            # clean_deployment(False, config)
-            deploy_files(config_file, plugin_path=None, confirm=False)
-    else:
-        # Check to see if the plugin directory exists, otherwise we can't
-        # do a quick zip
-        if not os.path.exists(os.path.join(get_plugin_directory(), name)):
-            # click.secho(
-            #     "You must deploy the plugin before you can package it using -q",
-            #     fg='red')
-            # proceed = click.confirm(
-            #     'Do you want to deploy and proceed with packaging?')
-            # if proceed:
-            deploy_files(config_file, plugin_path=None, confirm=False)
-        proceed = True
+    # create a temp directory for zipping
+    if os.path.exists('zip_build'):
+        shutil.rmtree('zip_build')
+    os.makedirs('zip_build')
+    deploy_files(config_file, 'zip_build', None, confirm=False)
+    # delete the zip if it exists
+    if os.path.exists('{0}.zip'.format(name)):
+        os.unlink('{0}.zip'.format(name))
+    if name:
+        os.chdir('zip_build')
+        # write the warning
+        warn = open(os.path.join(os.getcwd(), "!README.txt"), 'w')
+        warn.write('Any files placed in this directory will be lost during zip generation!\n')
+        warn.write('The {} directory contains the files that make up your plugin and were used to create the zip file.\n'.format(name))
+        warn.close()
 
-    # confirm = click.confirm(
-    #    'Create a packaged plugin ({0}.zip) from the deployed files?'.format(name))
-    # confirm = True
-    if proceed:
-        # delete the zip if it exists
-        if os.path.exists('{0}.zip'.format(name)):
-            os.unlink('{0}.zip'.format(name))
-        if name:
-            cwd = os.getcwd()
-            os.chdir(get_plugin_directory())
-            # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
-            if use_7z:
-                subprocess.check_call(
-                    [zip, 'a', '-r', os.path.join(cwd, '{0}.zip'.format(name)),
-                     name])
-            else:
-                subprocess.check_call([
-                    zip, '-r', os.path.join(cwd, '{0}.zip'.format(name)), name
-                ])
-
-            print(
-                'The {0}.zip archive has been created in the current directory'.format(
-                    name))
+        cwd = os.getcwd()
+        # click.secho("Current directory is {}".format(os.getcwd()), fg='magenta')
+        if use_7z:
+            subprocess.check_call(
+                [zip, 'a', '-r', os.path.join(cwd, '{0}.zip'.format(name)),
+                    name])
         else:
-            click.echo(
-                "Your config file is missing the plugin name (name=parameter)")
+            subprocess.check_call([
+                zip, '-r', os.path.join(cwd, '{0}.zip'.format(name)), name
+            ])
+
+            click.secho('The {0}.zip archive has been created in the zip_build directory'.format(
+                name), fg='green')
+            click.secho("The zip_build directory is temporary; don't store anything of value there.", fg='red')
+    else:
+        click.echo(
+            "Your config file is missing the plugin name (name=parameter)")
 
 
 @cli.command()
@@ -477,7 +479,7 @@ def validate(config_file):
     else:
         click.secho("Your {0} file is invalid".format(config_file), fg='red')
     try:
-        from PyQt5.QtCore import QStandardPaths, QDir
+        from qgis.PyQt.QtCore import QStandardPaths, QDir
         path = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
         plugin_path = os.path.join(QDir.homePath(), path, 'QGIS/QGIS3/profiles/default/python/plugins')
         click.secho("Plugin path: {}".format(plugin_path), fg='green')
@@ -503,8 +505,8 @@ def validate(config_file):
     # check for templates - uncomment next 4 after create function is done
     # print(__file__)
     # print("Module: {}".format (sys.modules['pb_tool']))
-    # basic_tmpl = pkgutil.get_data('pb_tool', 'templates/basic.tmpl')
-    # print("Read basic template: {}".format(str(basic_tmpl, 'utf-8')))
+    # module_name_tmpl = pkgutil.get_data('pb_tool', 'templates/dialog/module_name.tmpl')
+    # print("Read module_name template: {}".format(str(module_name_tmpl, 'utf-8')))
 
     # f = open('pb_tool/templates/basic.tmpl')
     # if f:
@@ -533,22 +535,203 @@ def list(config_file):
 
 
 @cli.command()
-# @click.option(
-#     '--modulename',
-#     prompt=True,
-#     help='Name of the module for the new plugin. Lower case with underscores, e.g: my_plugin')
-# @click.option(
-#     '--classname',
-#     prompt=True,
-#     help='Class name for the new plugin. CamelCase, no underscores, e.g: MyPlugin')
-# @click.option(
-#     '--menutext',
-#     prompt=True,
-#     help='Text for the menu.')
+def minimal():
+    """Create a QGIS minimalist plugin skeleton in the current directory.
+    The plugin consists of two files for you to customize.
+    The plugin code is from wonder-sk. See https://github.com/wonder-sk/qgis-minimal-plugin for details. """
+    proceed = True
+    if not is_empty(os.getcwd()):
+        proceed = click.confirm("There are already files in this directory that may be overwritten. Proceed?")
+    if proceed:
+        pb_tool_path = os.path.dirname(__file__)
+        # copy the metadata.txt file to the cwd
+        shutil.copy("{}/templates/minimal/metadata.txt".format(pb_tool_path), os.getcwd())
+        # copy the __init__.py file to the cwd
+        shutil.copy("{}/templates/minimal/__init__.py".format(pb_tool_path), os.getcwd())
+        # create a pb_tool.cfg
+        create_config('pb_tool.cfg', 'Minimal')
+    else:
+        click.secho("To be safe, create the plugin in an empty directory.", fg="green")
+
+
+@cli.command()
+@click.option(
+    '--modulename',
+    prompt=True,
+    help='Name of the module for the new plugin. Lower case with underscores, e.g: my_plugin')
+@click.option(
+    '--classname',
+    prompt=True,
+    help='Class name for the new plugin. CamelCase, no underscores, e.g: MyPlugin')
+@click.option(
+    '--menutext',
+    prompt=True,
+    help='Text for the menu.')
+
 def create(modulename=None, classname=None, menutext=None):
-    """ Create a new plugin in the current directory using either the basic or dialog template. """
-    # print("Creating {} in module {} with menu text {}".format(classname, modulename, menutext))
-    print("This feature is not implemented yet")
+    """ Create a new dialog based plugin in the current directory"""
+    click.secho("Creating {} in module {} with menu text {}".format(classname, modulename, menutext), fg="green")
+    proceed = True
+    if not is_empty(os.getcwd()):
+        proceed = click.confirm("There are already files in this directory that may be overwritten. Proceed?")
+    if not proceed:
+        click.secho("To be safe, create the plugin in an empty directory.", fg="green")
+        return
+
+    # read the templates and process
+    # process the init module
+    (tmpl, dt) = fetch_template('__init__.tmpl')
+    result = tmpl.substitute(TemplateModuleName=modulename,
+                             TemplateClass=classname,
+                             TemplateYear=dt.year,
+                             TemplateAuthor='author',
+                             TemplateEmail="email address")
+
+    # write the init module
+    f = open("__init__.py", 'w')
+    f.write(result)
+    f.close()
+
+    # process the main module
+    (tmpl, dt) = fetch_template('module_name.tmpl')
+    result = tmpl.substitute(TemplateModuleName=modulename,
+                             TemplateClass=classname,
+                             TemplateTitle=menutext,
+                             TemplateMenuText=menutext,
+                             TemplateYear=dt.year,
+                             TemplateAuthor='author',
+                             TemplateEmail="email address")
+    # write the module
+    f = open("{}.py".format(modulename), 'w')
+    f.write(result)
+    f.close()
+
+    # process the dialog
+    (tmpl, dt) = fetch_template('module_name_dialog.tmpl')
+    result = tmpl.substitute(TemplateModuleName=modulename,
+                             TemplateClass=classname,
+                             TemplateYear=dt.year,
+                             TemplateAuthor='author',
+                             TemplateEmail="email address")
+
+    # write the module
+    f = open("{}_dialog.py".format(modulename), 'w')
+    f.write(result)
+    f.close()
+
+    # process the dialog ui file
+    (tmpl, dt) = fetch_template('module_name_dialog_base.ui.tmpl')
+    result = tmpl.substitute(TemplateClass=classname,
+                             TemplateTitle=menutext)
+
+    # write the ui file
+    f = open("{}_dialog_base.ui".format(modulename), 'w')
+    f.write(result)
+    f.close()
+
+    # process the readme file
+    (tmpl, dt) = fetch_template('readme.tmpl')
+    result = tmpl.substitute(TemplateClass=classname,
+                             TemplateModuleName=modulename,
+                             PluginDir=os.getcwd()
+                             )
+
+    # write the readme file
+    f = open("readme.txt", 'w')
+    f.write(result)
+    f.close()
+
+    # process the resources file
+    (tmpl, dt) = fetch_template('resources.tmpl')
+    result = tmpl.substitute(TemplateModuleName=modulename)
+
+    # write the ui file
+    f = open("resources.qrc", 'w')
+    f.write(result)
+    f.close()
+
+    # process the results html file
+    (tmpl, dt) = fetch_template('results.tmpl')
+    result = tmpl.substitute(TemplateClass=classname,
+                             TemplateModuleName=modulename,
+                             PluginDir=os.getcwd()
+                             )
+
+    # write the readme file
+    f = open("results.html", 'w')
+    f.write(result)
+    f.close()
+    
+    # copy the default icon
+    pb_tool_path = os.path.dirname(__file__)
+    # print("pb_tool_path: {}".format(pb_tool_path))
+    shutil.copy("{}/templates/icon.png".format(pb_tool_path), os.getcwd())
+
+    # write the metadata file
+
+    metadata_file = open(os.path.join(os.getcwd(), 'metadata.txt'), 'w')
+    metadata_comment = (
+        '# This file contains metadata for your plugin.\n\n'
+        '# This file should be included when you package your plugin.'
+        '# Mandatory items:\n\n')
+    metadata_file.write(metadata_comment)
+    metadata_file.write('[general]\n')
+    metadata_file.write('name=%s\n' % modulename)
+    metadata_file.write('qgisMinimumVersion=2.99\n')
+    metadata_file.write('qgisMaximumVersion=3.99\n')
+    metadata_file.write(
+        '\n# Provide a brief description of the plugin\ndescription=%s\n' % "Dialog plugin template")
+    metadata_file.write(
+        'version=%s\n' % '0.1')
+    metadata_file.write(
+        'author=%s\n' % os.environ['USER'])
+    metadata_file.write(
+        '# Enter your email here\nemail=%s@somewhere.com\n\n' % os.environ['USER'])
+    metadata_file.write(
+        'about=%s\n\n' % 'Enter more info about your plugin here')
+    metadata_file.write(
+        'tracker=%s\n' % 'Provide link to your bug tracker')
+    metadata_file.write(
+        'repository=%s\n' % 'Provide link to the code repository')
+    metadata_file.write(
+        '# End of mandatory metadata\n\n')
+    metadata_file.write(
+        '# Recommended items:\n\n')
+    metadata_file.write(
+        '# Uncomment the following line and add your changelog:\n')
+    metadata_file.write(
+        '# changelog=\n\n')
+    metadata_file.write(
+        '# Tags are comma separated with spaces allowed\n')
+    metadata_file.write(
+        '# tags=%s\n\n' % 'pyqgis')
+    metadata_file.write(
+        'homepage=%s\n' % 'Provide the home page for the plugin')
+    metadata_file.write(
+        'icon=%s\n' % 'icon.png')
+    metadata_file.write(
+        '# experimental flag\n')
+    metadata_file.write(
+        'experimental=%s\n\n' % 'False')
+    metadata_file.write(
+        '# deprecated flag (applies to the whole plugin, not '
+        'just a single version)\n')
+    metadata_file.write('deprecated=%s\n\n' % 'False')
+    metadata_file.write(
+        '# Since QGIS 3.8, a comma separated list of plugins to be '
+        'installed\n')
+    metadata_file.write('# (or upgraded) can be specified.\n')
+    metadata_file.write('# Check the documentation for more information.\n')
+    metadata_file.write('# plugin_dependencies=\n\n')
+    metadata_file.write(
+        'Category of the plugin: Raster, Vector, Database or Web\n')
+    metadata_file.write('# category=\n\n')
+    metadata_file.write('# If the plugin can run on QGIS Server.\n')
+    metadata_file.write('server=False\n\n')
+    metadata_file.close()
+
+    # create the config file
+    create_config('pb_tool.cfg', modulename)
 
 @cli.command()
 @click.option(
@@ -559,24 +742,29 @@ def create(modulename=None, classname=None, menutext=None):
     '--package',
     default=None,
     help='Name of package (lower case). This will be used as the directory name for deployment')
-def xxconfig(name, package):
+
+def config(config_filename, package):
     """
     Create a config file based on source files in the current directory
     """
     click.secho("Create a config file based on source files in the current directory", fg="green")
-    if name == 'pb_tool.cfg':
+    if config_filename == 'pb_tool.cfg':
         click.secho("This will overwrite any existing pb_tool.cfg in the current directory", fg="red")
         proceed = click.confirm('Proceed?')
         if not proceed:
             return
-    template = Template(config_template())
-    # get the plugin package name
-    
-    if not package:
-        cfg_name = click.prompt('Name of package (lower case). This will be used as the directory name for deployment')
-    else:
-        cfg_name = name
 
+    # get the plugin package name
+    if not package:
+        package_name = click.prompt('Name of package (lower case). This will be used as the directory name for deployment')
+    else:
+        package_name = package
+
+    create_config(config_filename, package_name)
+
+
+def create_config(config_filename, package):
+    template = Template(config_template())
     # get the list of python files
     py_files = glob.glob('*.py')
 
@@ -603,7 +791,7 @@ def xxconfig(name, package):
     for locale in locale_list:
         locales.append(os.path.basename(locale))
 
-    cfg = template.substitute(Name=cfg_name,
+    cfg = template.substitute(Name=package,
                               PythonFiles=' '.join(py_files),
                               MainDialog=' '.join(main_dlg),
                               CompiledUiFiles=' '.join(other_ui),
@@ -611,9 +799,9 @@ def xxconfig(name, package):
                               Extras=' '.join(extras),
                               Locales=' '.join(locales))
 
-    fname = name
-    if os.path.exists(fname):
-        confirm = click.confirm('{0} exists. Overwrite?'.format(name))
+    fname = config_filename
+    if os.path.exists(config_filename):
+        confirm = click.confirm('{0} exists. Overwrite?'.format(config_filename))
         if not confirm:
             fname = click.prompt('Enter a name for the config file:')
 
@@ -787,22 +975,32 @@ def copy(source, destination):
             print('Directory not copied. Error: %s' % e)
 
 
-def get_plugin_directory(config='pb_tool.cfg'):
+def get_plugin_directory(user_profile=None, config='pb_tool.cfg'):
     """ Get the plugin directory, first checking to see if it's configured in pb_tool.cfg"""
     plugin_dir = get_config(config).get('plugin', 'plugin_path', fallback=None)
 
     if plugin_dir:
         click.secho("Using plugin directory from pb_tool.cfg", fg='green')
     else:
+        if user_profile:
+            click.secho("Using profile {}".format(user_profile))
+        else:
+            user_profile = 'default'
         try:
-            from PyQt5.QtCore import QStandardPaths, QDir
+            from qgis.PyQt.QtCore import QStandardPaths, QDir
             path = QStandardPaths.standardLocations(QStandardPaths.AppDataLocation)[0]
-            plugin_dir = os.path.join(QDir.homePath(), path, 'QGIS/QGIS3/profiles/default/python/plugins')
+            plugin_dir = os.path.join(QDir.homePath(), path, 'QGIS/QGIS3/profiles/{}/python/plugins'.format(user_profile))
+            # now check to see if it exists
+            if not os.path.exists(plugin_dir):
+                click.secho("Your plugin path does not exist. Make sure your profile directory is present:\n({})".format(plugin_dir), fg="red")
+                click.secho("Profiles are created from the Settings->User Profiles menu.", fg="red")
+                plugin_dir = None
             # click.secho("Plugin path: {}".format(plugin_path), fg='green')
-        except:
+        except Exception as e:
             click.secho("""Unable to determine location of your QGIS Plugin directory.
             Make sure your QGIS environment is setup properly for development and Python
             has access to the PyQt5.QtCore module or specify plugin_path in your pb_tool.cfg.""", fg='red')
+            # print(type(e))
             plugin_dir = None
 
     return plugin_dir
@@ -853,11 +1051,12 @@ extra_dirs:
 # Corresponding .ts files must exist in the i18n directory
 locales: $Locales
 
-[help]
-# the built help directory that should be deployed with the plugin
-dir: help/build/html
-# the name of the directory to target in the deployed plugin
-target: help
+# Uncomment the following to include help in the deployment
+# [help]
+# # the built help directory that should be deployed with the plugin
+# dir: help/build/html
+# # the name of the directory to target in the deployed plugin
+# target: help
 """
 
     return template
@@ -910,3 +1109,14 @@ def find_7z():
     # check for 7z
     zip = check_path('7z')
     return zip
+
+
+def fetch_template(template_name):
+    tmpl_data = pkgutil.get_data('pb_tool', "templates/dialog/{}".format(template_name))
+    tmpl = Template(tmpl_data.decode('utf-8'))
+    dt = datetime.now()
+    return (tmpl, dt)
+
+def is_empty(path):
+    files = os.listdir(path)
+    return len(files) == 0
