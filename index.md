@@ -175,9 +175,6 @@ Here is the help for a few of the commands, as reported using the --help option:
       --config TEXT  Name of the config file to use if other than pb_tool.cfg
       --help         Show this message and exit.
 
-**Note**: To get a clean package for upload to a repository, the zip command
-suggests doing a `dclean` and `deploy` first.
-
 ### Creating a Config File for an Existing Project
 You can create a config file for an existing plugin project by changing to the
 directory containing the plugin source and using `pb_tool create`:
