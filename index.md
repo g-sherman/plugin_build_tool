@@ -7,6 +7,7 @@ Python command line tool for compiling and deploying QGIS plugins on all OS plat
 ## What's New in 3.0.7
 
 * *pb_tool* can be invoked using the *pbt* alias
+* Support for deploying to a specific QGIS user profile using `--user-profile`
 * Zip file generation is now done in a local build directory and no longer requires a clean/deploy to build an archive
 * *pbt* can now create two plugin skeletons as project starters for you:
   1. A minimalist plugin from Martin Dobias (wonder-sk)consisting of two files. For information, see [https://github.com/wonder-sk/qgis-minimal-plugin](https://github.com/wonder-sk/qgis-minimal-plugin)
@@ -142,16 +143,25 @@ Here is the help for a few of the commands, as reported using the --help option:
       --help         Show this message and exit.
 
 ### Deploy
-    $ pb_tool deploy --help
-    Usage: pb_tool deploy [OPTIONS]
+    $ pbt deploy --help
+      Usage: pbt deploy [OPTIONS]
 
-      Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg
+        Deploy the plugin to QGIS plugin directory using parameters in pb_tool.cfg
 
-    Options:
-      --config TEXT  Name of the config file to use if other than pb_tool.cfg
-      -q, --quick    Do a quick install without compiling ui, resource, docs,
-                     and translation files
-      --help         Show this message and exit.
+      Options:
+        --config_file TEXT       Name of the config file to use if other than
+                                pb_tool.cfg
+        -p, --plugin_path TEXT   Specify the directory where to deploy your plugin
+                                if not using the standard location
+        -u, --user-profile TEXT  Specify the QGIS user profile to use for
+                                deployment. Ignored if -p is set or plugin_path is
+                                specified in pb_tool.cfg
+        -q, --quick              Do a quick install without compiling ui, resource,
+                                docs, and translation files
+        -y, --no-confirm         Don't ask for confirmation to overwrite existing
+                                files
+        --help                   Show this message and exit.
+
 **Note**: Confirmation is required before deploying as it removes the current version.
 
 ### Zip
