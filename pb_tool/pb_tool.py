@@ -268,6 +268,9 @@ def clean_docs():
     """
     Remove the built HTML help files from the build directory
     """
+    if is_empty(os.getcwd()):
+        click.secho("The directory is empty. Nothing to clean.")
+        return
     proceed = click.confirm('Remove all built HTML help files from the help build directory specified in pb_tool.cfg?')
     if proceed:
         if os.path.exists('help'):
@@ -301,6 +304,9 @@ def dclean(config):
 def clean(config):
     """ Remove compiled resource and ui files
     """
+    cfg = get_config(config)
+    if not cfg:
+        return
     proceed = click.confirm('Remove all compiled resource and ui files from the project?')
     if proceed:
         cfg = get_config(config)
@@ -762,6 +768,9 @@ def config(name, package):
     """
     Create a config file based on source files in the current directory
     """
+    if is_empty(os.getcwd()):
+        click.secho("The directory is empty. Can't create a config file.")
+        return
     click.secho("Create a config file based on source files in the current directory", fg="green")
     if name == 'pb_tool.cfg':
         click.secho("This will overwrite any existing pb_tool.cfg in the current directory", fg="red")
@@ -879,8 +888,8 @@ def get_config(config='pb_tool.cfg'):
         #click.echo(cfg.sections())
         return cfg
     else:
-        print("There is no {0} file in the current directory".format(config))
-        print("We can't do anything without it")
+        click.secho("There is no {0} file in the current directory.".format(config), fg="red")
+        click.secho("We can't do anything without it.", fg="red")
         sys.exit(1)
 
 
