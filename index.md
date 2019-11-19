@@ -14,6 +14,7 @@ a QGIS Python Plugin:
 * Deploy to your plugins directory for testing in QGIS
 * Create a zip file for upload to a repository
 * Clean both compiled and deployed files
+* Create plugin skeletons (minimal and dialog based)
 * Build and clean documentation
 * Build translation files
 * Works on Windows, OS X, and Linux
