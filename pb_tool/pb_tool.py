@@ -565,6 +565,7 @@ def minimal():
         shutil.copy("{}/templates/minimal/__init__.py".format(pb_tool_path), os.getcwd())
         # create a pb_tool.cfg
         create_config('pb_tool.cfg', 'Minimal')
+        click.secho("Created minimal plugin in {}".format(os.getcwd()), fg="green")
     else:
         click.secho("To be safe, create the plugin in an empty directory.", fg="green")
 
