@@ -4,7 +4,7 @@ http://g-sherman.github.io/plugin_build_tool
 
 Python command line tool for compiling and deploying QGIS plugins on all OS platforms.
 
-## What's New in 3.0.7
+## What's New in 3.0.8
 
 * *pb_tool* can be invoked using the *pbt* alias
 * Support for deploying to a specific QGIS user profile using `--user-profile`
@@ -43,11 +43,20 @@ You can also install using easy_install:
     easy_install pb_tool
 
 For information on getting setup to develop on Windows, see:
-[A Quick Guide to Getting Started with PyQGIS on Windows](http://spatialgalaxy.net/2014/10/09/a-quick-guide-to-getting-started-with-pyqgis-on-windows/)
+[Quick Guide to Getting Started with PyQGIS 3 on Windows](http://spatialgalaxy.net/2018/02/13/quick-guide-to-getting-started-with-pyqgis-3-on-windows/)
 
 ## Usage
 
-*pb_tool* requires a configuration file in order to do anything, except when you are using the *create* or *minmal* command to create a new plugin. By default,
+*pb_tool* requires a configuration file in order to do most tasks. 
+The following commands don't require a configuration file:
+
+* config
+* create
+* help
+* minimal
+* update
+* version
+
 *pb_tool* assumes a file name of pb_tool.cfg, although you can specify a
 different one using the ``--config`` options in most commands.
 
