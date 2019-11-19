@@ -235,7 +235,7 @@ and should be self-explanatory.
     # 
     # 
     # You can install pb_tool using:
-    #  pip install http://geoapt.net/files/pb_tool.zip
+    #  pip install pb_tool
     # 
     # Consider doing your development (and install of pb_tool) in a virtualenv.
     # 
