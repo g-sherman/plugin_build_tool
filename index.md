@@ -315,8 +315,30 @@ Two plugin skeletons are available: minimal and dialog-based.
 The minimal plugin consists of two files: `__init__.py` and `metadata.txt`.
 The files are taken directly from Martin Dobias' (wonder-sk) github project. The plugin places an action on the toolbar and pops up a message when clicked. You can expand this to implement your plugin when you don't need all the bells and whistles added by other plugin generators.
 
-Creating a minimal plugin is as simple as:
+Creating a minimal plugin is as simple as creating a new directory, changing to it, then:
 
+    $ pbt minimal
+    Created new config file in pb_tool.cfg
+    $ pbt deploy
+    Deploying to /home/gsherman/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Minimal
+    Deploying will:
+                    * Remove your currently deployed version
+                    * Compile the ui and resource files
+                    * Build the help docs
+                    * Copy everything to your /home/gsherman/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Minimal directory
+
+    Proceed? [y/N]: y
+    Removing plugin from /home/gsherman/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Minimal
+    Deploying to /home/gsherman/.local/share/QGIS/QGIS3/profiles/default/python/plugins/Minimal
+    Compiling to make sure install is clean
+    Compiled 0 UI files
+    Compiled 0 resource files
+    No help directory exists in the current directory
+    Copying __init__.py
+    Copying metadata.txt
+    No help files configured---skipping...
+
+Open QGIS and click `Go!` on the toolbar to see what it does.
 
 For information, see [https://github.com/wonder-sk/qgis-minimal-plugin](https://github.com/wonder-sk/qgis-minimal-plugin).
 
