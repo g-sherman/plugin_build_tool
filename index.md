@@ -90,7 +90,7 @@ To display the available commands, just enter `pb_tool` or `pbt` on the command 
       compile     Compile the resource and ui files
       config      Create a config file based on source files in the current...
       create      Create a new dialog-based plugin in the current directory
-      dclean      Remove the deployed plugin from the .qgis2/python/plugins...
+      dclean      Remove the deployed plugin from the deployment directory
       deploy      Deploy the plugin to QGIS plugin directory using parameters
                   in...
       doc         Build HTML version of the help files using sphinx
@@ -134,7 +134,7 @@ Here is the help for a few of the commands, as reported using the --help option:
     $ pb_tool dclean --help
     Usage: pb_tool dclean [OPTIONS]
 
-      Remove the deployed plugin from the .qgis2/python/plugins directory
+      Remove the deployed plugin from the deployment directory
 
     Options:
       --config TEXT  Name of the config file to use if other than pb_tool.cfg
@@ -171,7 +171,11 @@ Here is the help for a few of the commands, as reported using the --help option:
                                 files
         --help                   Show this message and exit.
 
-**Note**: Confirmation is required before deploying as it removes the current version.
+**Note**: Unless using the --quick option, confirmation is required before deploying as it removes the current version.
+
+#### Deploying to a Profile
+
+If you use the `--user-profile` option, any `--plugin_path` or setting in `pb_tool.cfg` will be ignored and the plugin will be deployed to the appropriate user profile directory. 
 
 ### Zip
     $ pb_tool zip --help
@@ -183,6 +187,11 @@ Here is the help for a few of the commands, as reported using the --help option:
     Options:
       --config TEXT  Name of the config file to use if other than pb_tool.cfg
       --help         Show this message and exit.
+
+Your zipped plugin is created in a `zip_build` subdirectory of your project. This directory is for building the archive---anything placed there will ultimately be lost.
+
+The `zip` command leaves a copy of your plugin in the `zip_build` directory. You can take a look at it to make sure your `pb_tool.cfg` is properly setup to deploy all the files needed.
+
 
 ### Creating a Config File for an Existing Project
 You can create a config file for an existing plugin project by changing to the
