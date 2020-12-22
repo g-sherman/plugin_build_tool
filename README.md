@@ -89,7 +89,7 @@ Commands:
   clean-docs  Remove the built HTML help files from the build directory
   compile     Compile the resource and ui files
   config      Create a config file based on source files in the current...
-  dclean      Remove the deployed plugin from the .qgis2/python/plugins...
+  dclean      Remove the deployed plugin from the ~/(UserProfile)/python/plugins...
   deploy      Deploy the plugin to QGIS plugin directory using parameters
               in...
   doc         Build HTML version of the help files using sphinx
@@ -134,7 +134,7 @@ Options:
   $ pb_tool dclean --help
   Usage: pb_tool dclean [OPTIONS]
 
-    Remove the deployed plugin from the .qgis2/python/plugins directory
+    Remove the deployed plugin from the ~/(UserProfile)/python/plugins directory
 
   Options:
     --config TEXT  Name of the config file to use if other than pb_tool.cfg
@@ -222,7 +222,7 @@ and should be self-explanatory.
 
 [plugin]
 # Name of the plugin. This is the name of the directory that will
-# be created in .qgis2/python/plugins
+# be created in ~/(UserProfile)/python/plugins
 name: TestPlugin
 
 [files]
@@ -260,7 +260,7 @@ target: help
 
 ```shell
 Use ``pb_tool deploy`` to build your plugin and copy it
-to qgis2/python/plugins`` in your HOME directory:
+to ~/<UserProfiles>/QGIS/QGIS3/profiles/default/python/plugins`` in your HOME directory:
 
 
 pb_tool deploy
@@ -268,11 +268,11 @@ Deploying will:
             * Remove your currently deployed version
             * Compile the ui and resource files
             * Build the help docs
-            * Copy everything to your .qgis2/python/plugins directory
+            * Copy everything to your ~/(UserProfile)/python/plugins directory
 
 Proceed? [y/N]: y
-Removing plugin from /Users/gsherman/.qgis2/python/plugins/TestPlugin
-Deploying to /Users/gsherman/.qgis2/python/plugins/TestPlugin
+Removing plugin from /Users/gsherman/~/(UserProfile)/python/plugins/TestPlugin
+Deploying to /Users/gsherman/~/(UserProfile)/python/plugins/TestPlugin
 Compiling to make sure install is clean
 Skipping foo.ui (unchanged)
 Compiled 0 UI files
@@ -296,7 +296,7 @@ Copying foo.py
 Copying resources_rc.py
 Copying icon.png
 Copying metadata.txt
-Copying help/build/html to /Users/gsherman/.qgis2/python/plugins/TestPlugin/help
+Copying help/build/html to /Users/gsherman/~/(UserProfile)/python/plugins/TestPlugin/help
 ```
 
 ## What's Missing
