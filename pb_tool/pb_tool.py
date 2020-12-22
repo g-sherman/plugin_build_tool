@@ -20,6 +20,7 @@
 __author__ = 'gsherman'
 
 import os
+from platform import platform
 import sys
 import subprocess
 import shutil
@@ -219,7 +220,7 @@ def install_files(plugin_dir, cfg):
 
 
 def clean_deployment(ask_first=True, config='pb_tool.cfg', plugin_dir=None):
-    """ Remove the deployed plugin from the .qgis2/python/plugins directory
+    """ Remove the deployed plugin from the ~/(UserProfile)/python/plugins directory
     """
     if not plugin_dir:
         name = get_config(config).get('plugin', 'name')
@@ -266,7 +267,7 @@ def clean_docs():
               default='pb_tool.cfg',
               help='Name of the config file to use if other than pb_tool.cfg')
 def dclean(config):
-    """ Remove the deployed plugin from the .qgis2/python/plugins directory
+    """ Remove the deployed plugin from the ~/(UserProfile)/python/plugins directory
     """
     clean_deployment(True, config)
 
@@ -753,8 +754,15 @@ def copy(source, destination):
 
 def get_plugin_directory():
     home = os.path.expanduser('~')
-    qgis2 = os.path.join('.qgis2', 'python', 'plugins')
-    return os.path.join(home, qgis2)
+    platform = sys.platform
+    if platform == 'win32':
+        userprofiles = os.path.join('AppData', 'Roaming')
+    elif platform == 'linux':
+        userprofiles = os.path.join('.local', 'share')
+    elif platform == 'mac':
+        userprofiles = os.path.join('Libary', 'Application Support')
+    qgis3 = os.path.join(home, userprofiles, 'QGIS', 'QGIS3', 'profiles', 'python', 'plugins')
+    return os.path.join(home, qgis3)
 
 
 def config_template():
@@ -770,7 +778,7 @@ def config_template():
 
 [plugin]
 # Name of the plugin. This is the name of the directory that will
-# be created in .qgis2/python/plugins
+# be created in ~/(UserProfile)/python/plugins
 name: $Name
 
 # Full path to where you want your plugin directory copied. If empty,

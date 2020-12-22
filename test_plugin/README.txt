@@ -4,7 +4,7 @@ Your plugin TestPlugin was created in:
     /Users/gsherman/development/qgis_plugins/TestPlugin
 
 Your QGIS plugin directory is located at:
-    /Users/gsherman/.qgis2/python/plugins
+    /Users/gsherman/~/(UserProfile)/python/plugins
 
 What's Next:
 
