@@ -181,7 +181,9 @@ def install_files(plugin_dir, cfg):
     for file in install_files:
         click.secho("Copying {0}".format(file), fg='magenta', nl=False)
         try:
-            shutil.copy(file, os.path.join(plugin_dir, file))
+            target = os.path.join(plugin_dir, file)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.copy(file, target)
             print("")
         except Exception as oops:
             errors.append(
