@@ -40,7 +40,7 @@ setup(
         'Topic :: Scientific/Engineering :: GIS'],
     keywords='QGIS PyQGIS',
     platforms=['Linux', 'Windows', 'OS X'],
-    packages=find_packages(),
+    packages=['pb_tool'],
     package_data={'pb_tool': ['templates/*.tmpl', 'templates/icon.png',
                               'templates/dialog/*.*', 'templates/minimal/*.*']},
     include_package_data=True,
