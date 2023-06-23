@@ -278,10 +278,7 @@ def clean_docs():
     if proceed:
         if os.path.exists('help'):
             click.echo('Removing built HTML from the help documentation')
-            if sys.platform == 'win32':
-                makeprg = 'make.bat'
-            else:
-                makeprg = 'make'
+            makeprg = find_make()
             cwd = os.getcwd()
             os.chdir('help')
             subprocess.check_call([makeprg, 'clean'])
@@ -344,10 +341,7 @@ def build_docs():
     """ Build the docs using sphinx"""
     if os.path.exists('help'):
         click.echo('Building the help documentation')
-        if sys.platform == 'win32':
-            makeprg = 'make.bat'
-        else:
-            makeprg = 'make'
+        makeprg = find_make()
         cwd = os.getcwd()
         os.chdir('help')
         subprocess.check_call([makeprg, 'html'])
@@ -1144,6 +1138,17 @@ def file_changed(infile, outfile):
         return infile_s.st_mtime > outfile_s.st_mtime
     except:
         return True
+
+
+def find_make():
+    makeprg = shutil.which('make')
+    if makeprg is None:
+        click.secho('Error: can not find "make" program.  Install it and/or update the PATH environment variable.',
+                    fg='red')
+        if os.name == 'nt':
+            click.secho('On windows, you can install GnuWin32 Make.', fg='red')
+        sys.exit(1)
+    return makeprg
 
 
 def find_zip():
